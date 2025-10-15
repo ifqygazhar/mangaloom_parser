@@ -228,13 +228,14 @@ class ComicSansParser extends ComicParser {
     // Extract basic info
     final title = article.querySelector('h1.entry-title')?.text.trim() ?? '';
 
-    final altTitleElement = article
-        .querySelectorAll('.wd-full b')
-        .firstWhere(
-          (el) => el.text.contains('Alternative Titles'),
-          orElse: () => Element.tag('b'),
-        );
-    final altTitle = altTitleElement.nextElementSibling?.text.trim() ?? '';
+    // Alternative title - find the b tag containing "Alternative Titles"
+    String altTitle = '';
+    for (final b in article.querySelectorAll('.wd-full b')) {
+      if (b.text.contains('Alternative Titles')) {
+        altTitle = b.nextElementSibling?.text.trim() ?? '';
+        break;
+      }
+    }
 
     final thumbnail =
         article
@@ -246,38 +247,55 @@ class ComicSansParser extends ComicParser {
     final description =
         article.querySelector('.entry-content-single')?.text.trim() ?? '';
 
-    final status =
-        article
-            .querySelector('.tsinfo .imptdt:contains("Status") i')
-            ?.text
-            .trim() ??
-        '';
-    final type =
-        article
-            .querySelector('.tsinfo .imptdt:contains("Type") a')
-            ?.text
-            .trim() ??
-        '';
-    final released =
-        article.querySelector('.fmed:contains("Released") span')?.text.trim() ??
-        '';
-    final author =
-        article.querySelector('.fmed:contains("Author") span')?.text.trim() ??
-        '';
+    // Status - find .imptdt that contains "Status" text
+    String status = '';
+    for (final imptdt in article.querySelectorAll('.tsinfo .imptdt')) {
+      if (imptdt.text.contains('Status')) {
+        status = imptdt.querySelector('i')?.text.trim() ?? '';
+        break;
+      }
+    }
 
-    var updatedOn =
-        article
-            .querySelector('.fmed:contains("Updated On") span time')
-            ?.attributes['datetime']
-            ?.trim() ??
-        '';
-    if (updatedOn.isEmpty) {
-      updatedOn =
-          article
-              .querySelector('.fmed:contains("Updated On") span')
-              ?.text
-              .trim() ??
-          '';
+    // Type - find .imptdt that contains "Type" text
+    String type = '';
+    for (final imptdt in article.querySelectorAll('.tsinfo .imptdt')) {
+      if (imptdt.text.contains('Type')) {
+        type = imptdt.querySelector('a')?.text.trim() ?? '';
+        break;
+      }
+    }
+
+    // Released - find .fmed that contains "Released" text
+    String released = '';
+    for (final fmed in article.querySelectorAll('.fmed')) {
+      if (fmed.text.contains('Released')) {
+        released = fmed.querySelector('span')?.text.trim() ?? '';
+        break;
+      }
+    }
+
+    // Author - find .fmed that contains "Author" text
+    String author = '';
+    for (final fmed in article.querySelectorAll('.fmed')) {
+      if (fmed.text.contains('Author')) {
+        author = fmed.querySelector('span')?.text.trim() ?? '';
+        break;
+      }
+    }
+
+    // Updated On - find .fmed that contains "Updated On" text
+    String updatedOn = '';
+    for (final fmed in article.querySelectorAll('.fmed')) {
+      if (fmed.text.contains('Updated On')) {
+        final timeEl = fmed.querySelector('span time');
+        if (timeEl != null) {
+          updatedOn = timeEl.attributes['datetime']?.trim() ?? '';
+        }
+        if (updatedOn.isEmpty) {
+          updatedOn = fmed.querySelector('span')?.text.trim() ?? '';
+        }
+        break;
+      }
     }
 
     var rating =
@@ -292,22 +310,39 @@ class ComicSansParser extends ComicParser {
 
     // Extract genres
     final genres = <Genre>[];
-    final genreElements = article.querySelectorAll('.wd-full .mgen a');
-    final genrePrefix = '$_baseUrl/genres';
 
-    for (final el in genreElements) {
-      final genreTitle = el.text.trim();
-      final genreHref = el.attributes['href']?.trim() ?? '';
+    // Find the .wd-full div that contains "Genres"
+    for (final wdFull in article.querySelectorAll('.wd-full')) {
+      if (wdFull.text.contains('Genres') || wdFull.text.contains('Genre')) {
+        final genreElements = wdFull.querySelectorAll('.mgen a');
+        final genrePrefix = '$_baseUrl/genres';
 
-      if (genreTitle.isNotEmpty) {
-        genres.add(
-          Genre(title: genreTitle, href: _trimPrefix(genreHref, genrePrefix)),
-        );
+        for (final el in genreElements) {
+          final genreTitle = el.text.trim();
+          final genreHref = el.attributes['href']?.trim() ?? '';
+
+          if (genreTitle.isNotEmpty) {
+            genres.add(
+              Genre(
+                title: genreTitle,
+                href: _trimPrefix(genreHref, genrePrefix),
+              ),
+            );
+          }
+        }
+        break;
       }
     }
 
-    final latestChapter =
-        article.querySelector('.lastend .inepcx .epcurlast')?.text.trim() ?? '';
+    // Latest chapter - find .inepcx that contains "New Chapter"
+    String latestChapter = '';
+    for (final inepcx in article.querySelectorAll('.lastend .inepcx')) {
+      if (inepcx.text.contains('New Chapter') ||
+          inepcx.text.contains('Chapter')) {
+        latestChapter = inepcx.querySelector('.epcurlast')?.text.trim() ?? '';
+        if (latestChapter.isNotEmpty) break;
+      }
+    }
 
     // Extract chapters
     final chapters = <Chapter>[];
