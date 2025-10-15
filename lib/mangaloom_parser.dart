@@ -12,3 +12,4 @@ export 'src/parsers/parser_base.dart';
 export 'src/parsers/id/shinigami_parser.dart';
 export 'src/parsers/id/comicsans_parser.dart';
 export 'src/parsers/en/mangapark_parser.dart';
+export 'src/parsers/id/webtoon_parser.dart';

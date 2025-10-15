@@ -29,7 +29,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-enum ParserType { shinigami, comicsans, mangapark }
+enum ParserType { shinigami, comicsans, mangapark, webtoon }
 
 enum TestFunction {
   popular,
@@ -64,6 +64,7 @@ class _HomePageState extends State<HomePage> {
     ParserType.shinigami: 'Shinigami - ID',
     ParserType.comicsans: 'ComicSans - ID',
     ParserType.mangapark: 'MangaPark - EN',
+    ParserType.webtoon: 'Webtoon - ID',
   };
 
   @override
@@ -80,6 +81,8 @@ class _HomePageState extends State<HomePage> {
       parser = ComicSansParser();
     } else if (selectedParser == ParserType.mangapark) {
       parser = MangaParkParser();
+    } else {
+      parser = WebtoonParser();
     }
   }
 
@@ -91,6 +94,8 @@ class _HomePageState extends State<HomePage> {
       (parser as ComicSansParser).dispose();
     } else if (parser is MangaParkParser) {
       (parser as MangaParkParser).dispose();
+    } else if (parser is WebtoonParser) {
+      (parser as WebtoonParser).dispose();
     }
     super.dispose();
   }
@@ -186,6 +191,8 @@ class _HomePageState extends State<HomePage> {
       (parser as ComicSansParser).dispose();
     } else if (parser is MangaParkParser) {
       (parser as MangaParkParser).dispose();
+    } else if (parser is WebtoonParser) {
+      (parser as WebtoonParser).dispose();
     }
 
     setState(() {
@@ -871,6 +878,11 @@ class ComicCard extends StatelessWidget {
           children: [
             Expanded(
               child: Image.network(
+                headers: {
+                  'User-Agent':
+                      'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
+                  // 'Referer': "https://www.webtoons.com/id/",
+                },
                 comic.thumbnail,
                 fit: BoxFit.cover,
                 width: double.infinity,
