@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mangaloom_parser/mangaloom_parser.dart';
+import 'package:mangaloom_parser/src/utils/make_request_helper.dart';
 
 class ShinigamiParser extends ComicParser {
   static const String _baseApiUrl = 'https://api.shngm.io/v1';
@@ -18,26 +18,6 @@ class ShinigamiParser extends ComicParser {
 
   @override
   String get language => 'ID';
-
-  /// Helper method untuk membuat HTTP request dengan headers yang sesuai
-  Future<Map<String, dynamic>> _makeRequest(String url) async {
-    final response = await _client.get(
-      Uri.parse(url),
-      headers: {
-        'User-Agent':
-            'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
-        'Accept': 'application/json',
-        'Referer': baseUrl,
-        'sec-fetch-dest': 'empty',
-      },
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('API returned status code: ${response.statusCode}');
-    }
-
-    return json.decode(response.body) as Map<String, dynamic>;
-  }
 
   /// Convert country ID to comic type
   String _convertCountryId(String country) {
@@ -69,7 +49,11 @@ class ShinigamiParser extends ComicParser {
   Future<List<ComicItem>> fetchPopular() async {
     final url =
         '$_baseApiUrl/manga/list?page=1&page_size=24&sort=popularity&sort_order=desc';
-    final data = await _makeRequest(url);
+    final data = await helperMakeRequest(
+      url: url,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final List items = data['data'] as List;
     return items
@@ -81,7 +65,11 @@ class ShinigamiParser extends ComicParser {
   Future<List<ComicItem>> fetchRecommended() async {
     final url =
         '$_baseApiUrl/manga/list?page=1&page_size=24&sort=rating&sort_order=desc';
-    final data = await _makeRequest(url);
+    final data = await helperMakeRequest(
+      url: url,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final List items = data['data'] as List;
     return items
@@ -93,7 +81,11 @@ class ShinigamiParser extends ComicParser {
   Future<List<ComicItem>> fetchNewest({int page = 1}) async {
     final url =
         '$_baseApiUrl/manga/list?page=$page&page_size=24&sort=latest&sort_order=desc';
-    final data = await _makeRequest(url);
+    final data = await helperMakeRequest(
+      url: url,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final List items = data['data'] as List;
     if (items.isEmpty) {
@@ -108,7 +100,11 @@ class ShinigamiParser extends ComicParser {
   @override
   Future<List<ComicItem>> fetchAll({int page = 1}) async {
     final url = '$_baseApiUrl/manga/list?page=$page&page_size=24';
-    final data = await _makeRequest(url);
+    final data = await helperMakeRequest(
+      url: url,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final List items = data['data'] as List;
     if (items.isEmpty) {
@@ -124,7 +120,11 @@ class ShinigamiParser extends ComicParser {
   Future<List<ComicItem>> search(String query) async {
     final encodedQuery = Uri.encodeComponent(query);
     final url = '$_baseApiUrl/manga/list?q=$encodedQuery&page=1&page_size=24';
-    final data = await _makeRequest(url);
+    final data = await helperMakeRequest(
+      url: url,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final List items = data['data'] as List;
     if (items.isEmpty) {
@@ -141,7 +141,11 @@ class ShinigamiParser extends ComicParser {
     final encodedGenre = Uri.encodeComponent(genre);
     final url =
         '$_baseApiUrl/manga/list?page=$page&page_size=24&genre_include=$encodedGenre&genre_include_mode=and&sort=popularity&sort_order=desc';
-    final data = await _makeRequest(url);
+    final data = await helperMakeRequest(
+      url: url,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final List items = data['data'] as List;
     if (items.isEmpty) {
@@ -207,7 +211,11 @@ class ShinigamiParser extends ComicParser {
       url += '&genre_include=$encodedGenre&genre_include_mode=and';
     }
 
-    final data = await _makeRequest(url);
+    final data = await helperMakeRequest(
+      url: url,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final List items = data['data'] as List;
     if (items.isEmpty) {
@@ -222,7 +230,11 @@ class ShinigamiParser extends ComicParser {
   @override
   Future<List<Genre>> fetchGenres() async {
     final url = '$_baseApiUrl/genre/list';
-    final data = await _makeRequest(url);
+    final data = await helperMakeRequest(
+      url: url,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final List items = data['data'] as List;
     return items.map((item) {
@@ -241,7 +253,11 @@ class ShinigamiParser extends ComicParser {
 
     // Get manga details
     final url = '$_baseApiUrl/manga/detail/$mangaId';
-    final data = await _makeRequest(url);
+    final data = await helperMakeRequest(
+      url: url,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final item = data['data'] as Map<String, dynamic>;
 
@@ -275,7 +291,11 @@ class ShinigamiParser extends ComicParser {
     // Get chapters
     final chaptersUrl =
         '$_baseApiUrl/chapter/$mangaId/list?page=1&page_size=9999&sort_by=chapter_number&sort_order=asc';
-    final chaptersData = await _makeRequest(chaptersUrl);
+    final chaptersData = await helperMakeRequest(
+      url: chaptersUrl,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final List chaptersList = chaptersData['data'] as List;
     final chapters = chaptersList.map((ch) {
@@ -319,7 +339,11 @@ class ShinigamiParser extends ComicParser {
 
     // Get chapter details
     final url = '$_baseApiUrl/chapter/detail/$chapterId';
-    final data = await _makeRequest(url);
+    final data = await helperMakeRequest(
+      url: url,
+      client: _client,
+      baseUrl: baseUrl,
+    );
 
     final responseData = data['data'] as Map<String, dynamic>;
     final chapter = responseData['chapter'] as Map<String, dynamic>;
