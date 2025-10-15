@@ -10,3 +10,4 @@ export 'src/models/genre.dart';
 // Parsers
 export 'src/parsers/parser_base.dart';
 export 'src/parsers/id/shinigami_parser.dart';
+export 'src/parsers/id/comicsans_parser.dart';
