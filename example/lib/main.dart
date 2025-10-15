@@ -29,7 +29,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-enum ParserType { shinigami, comicsans }
+enum ParserType { shinigami, comicsans, mangapark }
 
 enum TestFunction {
   popular,
@@ -60,6 +60,12 @@ class _HomePageState extends State<HomePage> {
   String? selectedType;
   String? selectedOrder;
 
+  final subtitleParserSelection = {
+    ParserType.shinigami: 'Shinigami - ID',
+    ParserType.comicsans: 'ComicSans - ID',
+    ParserType.mangapark: 'MangaPark - EN',
+  };
+
   @override
   void initState() {
     super.initState();
@@ -68,9 +74,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _initializeParser() {
-    parser = selectedParser == ParserType.shinigami
-        ? ShinigamiParser()
-        : ComicSansParser();
+    if (selectedParser == ParserType.shinigami) {
+      parser = ShinigamiParser();
+    } else if (selectedParser == ParserType.comicsans) {
+      parser = ComicSansParser();
+    } else if (selectedParser == ParserType.mangapark) {
+      parser = MangaParkParser();
+    }
   }
 
   @override
@@ -79,6 +89,8 @@ class _HomePageState extends State<HomePage> {
       (parser as ShinigamiParser).dispose();
     } else if (parser is ComicSansParser) {
       (parser as ComicSansParser).dispose();
+    } else if (parser is MangaParkParser) {
+      (parser as MangaParkParser).dispose();
     }
     super.dispose();
   }
@@ -124,6 +136,7 @@ class _HomePageState extends State<HomePage> {
 
         case TestFunction.genres:
           final result = await parser.fetchGenres();
+
           setState(() => genres = result);
           break;
 
@@ -135,6 +148,9 @@ class _HomePageState extends State<HomePage> {
           final result = await parser.fetchByGenre(
             selectedGenre!,
             page: currentPage,
+          );
+          debugPrint(
+            "Fetched ${result.length} comics for genre $selectedGenre",
           );
           setState(() => comics = result);
           break;
@@ -168,6 +184,8 @@ class _HomePageState extends State<HomePage> {
       (parser as ShinigamiParser).dispose();
     } else if (parser is ComicSansParser) {
       (parser as ComicSansParser).dispose();
+    } else if (parser is MangaParkParser) {
+      (parser as MangaParkParser).dispose();
     }
 
     setState(() {
@@ -550,11 +568,7 @@ class _HomePageState extends State<HomePage> {
               children: ParserType.values.map((type) {
                 return RadioListTile<ParserType>(
                   title: Text(type.name.toUpperCase()),
-                  subtitle: Text(
-                    type == ParserType.shinigami
-                        ? 'Shinigami - ID'
-                        : 'ComicSans - ID',
-                  ),
+                  subtitle: Text(subtitleParserSelection[type] ?? ''),
                   value: type,
                   groupValue: selectedParser,
                   onChanged: (value) {
@@ -847,6 +861,7 @@ class ComicCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("ComicImage URL: ${comic.thumbnail}");
     return GestureDetector(
       onTap: onTap,
       child: Card(
