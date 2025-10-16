@@ -23,6 +23,8 @@ A powerful and flexible Flutter package for parsing comic/manga websites. Easily
 | ------------------- | ----------- | -------- | --------- |
 | **ShinigamiParser** | Shinigami   | ID       | ✅ Active |
 | **ComicSansParser** | CosmicScans | ID       | ✅ Active |
+| **MangaparkParser** | Mangapark   | EN       | ✅ Active |
+| **WebtoonParser**   | Webtoon     | ID       | ✅ Active |
 
 ## 📦 Installation
 
