@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.2] - 2025-10-16
+
+### Added
+
+- 🎨 WebtoonParser - New parser for Webtoons Indonesia comic source
+- 🌐 Support for Webtoons.com Indonesian language content
+- 📱 Mobile API integration for episode data
+- 🔗 Viewer link caching for improved performance
+
+### Fixed
+
+- 🐛 Fixed 500 error when fetching chapter images in WebtoonParser
+- ✅ Corrected viewer URL construction using API episode data
+- 🔧 Fixed image extraction with proper data-url priority
+- 🎯 Improved headers for viewer page requests with proper Referer
+- 📖 Fixed chapter navigation using episode sequence data
+- 🖼️ Enhanced image filtering to only include static domain resources
+
+### Changed
+
+- 🔄 Updated WebtoonParser to use viewerLink from episode API
+- ⚡ Improved chapter fetching with enhanced headers
+- 🎨 Better error messages with URL information for debugging
+
 ## [0.0.1] - 2025-10-16
 
 ### Added
