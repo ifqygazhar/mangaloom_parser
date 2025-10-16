@@ -11,6 +11,9 @@ class WebtoonParser extends ComicParser {
 
   final http.Client _client;
 
+  // Cache viewer links for chapters
+  final Map<String, String> _viewerLinkCache = {};
+
   WebtoonParser({http.Client? client}) : _client = client ?? http.Client();
 
   @override
@@ -395,6 +398,13 @@ class WebtoonParser extends ComicParser {
       final episodeTitle = episode['episodeTitle'] as String? ?? '';
       final episodeNo = episode['episodeNo'] as int;
       final exposureDate = episode['exposureDateMillis'] as int?;
+      final viewerLink = episode['viewerLink'] as String? ?? '';
+
+      // Store viewer link in cache
+      final chapterHref = '/$titleNo/$episodeNo/';
+      if (viewerLink.isNotEmpty) {
+        _viewerLinkCache[chapterHref] = viewerLink;
+      }
 
       // Format date
       String date = '';
@@ -407,7 +417,7 @@ class WebtoonParser extends ComicParser {
       chapters.add(
         Chapter(
           title: episodeTitle.isNotEmpty ? episodeTitle : 'Episode $episodeNo',
-          href: '/$titleNo/$episodeNo/',
+          href: chapterHref,
           date: date,
         ),
       );
@@ -431,9 +441,23 @@ class WebtoonParser extends ComicParser {
     final titleNo = int.parse(parts[0]);
     final episodeNo = int.parse(parts[1]);
 
-    // Construct viewer URL
-    final viewerUrl =
-        '$baseUrl/$_languageCode/drama/placeholder/viewer?title_no=$titleNo&episode_no=$episodeNo';
+    // Get viewer URL from cache or construct it
+    String viewerUrl = _viewerLinkCache[href] ?? '';
+
+    if (viewerUrl.isEmpty) {
+      // If not in cache, fetch episodes to populate cache
+      await _fetchEpisodes(titleNo);
+      viewerUrl = _viewerLinkCache[href] ?? '';
+    }
+
+    // If still empty, construct a basic URL (fallback)
+    if (viewerUrl.isEmpty) {
+      viewerUrl =
+          '$baseUrl/$_languageCode/viewer?title_no=$titleNo&episode_no=$episodeNo';
+    } else {
+      // Make sure viewer link is absolute URL
+      viewerUrl = _toAbsoluteUrl(viewerUrl, domain);
+    }
 
     final response = await _client.get(Uri.parse(viewerUrl), headers: _headers);
 
@@ -535,4 +559,8 @@ class WebtoonParser extends ComicParser {
   void dispose() {
     _client.close();
   }
+
+  // Getter for domain (used in _toAbsoluteUrl)
+  String get domain =>
+      baseUrl.replaceAll('https://', '').replaceAll('http://', '');
 }

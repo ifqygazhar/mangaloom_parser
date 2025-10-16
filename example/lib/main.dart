@@ -881,7 +881,7 @@ class ComicCard extends StatelessWidget {
                 headers: {
                   'User-Agent':
                       'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
-                  // 'Referer': "https://www.webtoons.com/id/",
+                  'Referer': "https://www.webtoons.com/id/",
                 },
                 comic.thumbnail,
                 fit: BoxFit.cover,
@@ -1264,6 +1264,11 @@ class _ChapterReaderPageState extends State<ChapterReaderPage> {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Image.network(
+                        headers: {
+                          'User-Agent':
+                              'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
+                          'Referer': "https://www.webtoons.com/id/",
+                        },
                         imageUrl,
                         fit: BoxFit.contain,
                         loadingBuilder: (context, child, loadingProgress) {
