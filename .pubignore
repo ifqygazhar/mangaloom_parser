@@ -1,0 +1,37 @@
+# Files and directories to exclude when publishing to pub.dev
+
+# Example app build files
+
+example/build/
+example/.dart_tool/
+example/.flutter-plugins
+example/.flutter-plugins-dependencies
+example/.packages
+example/pubspec.lock
+example/android/.gradle/
+example/android/app/build/
+example/ios/Pods/
+example/ios/.symlinks/
+example/ios/Flutter/
+example/ios/Runner.xcworkspace/
+example/macos/Flutter/
+example/linux/flutter/
+example/windows/flutter/
+
+# IDE files
+
+.idea/
+.vscode/
+_.iml
+_.ipr
+\*.iws
+
+# Misc
+
+.DS_Store
+\*.log
+coverage/
+
+# Documentation (optional - remove if you want to include)
+
+UX_IMPROVEMENTS.md
