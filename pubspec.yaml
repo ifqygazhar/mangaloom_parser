@@ -14,6 +14,9 @@ dependencies:
     sdk: flutter
   http: ^1.5.0
   html: ^0.15.6
+  crypto: ^3.0.6
+  encrypt: ^5.0.3
+  flutter_js: ^0.8.5
 
 dev_dependencies:
   flutter_test:

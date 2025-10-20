@@ -29,7 +29,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-enum ParserType { shinigami, comicsans, mangapark, webtoon }
+enum ParserType { shinigami, comicsans, mangapark, webtoon, batoto }
 
 enum TestFunction {
   popular,
@@ -65,6 +65,7 @@ class _HomePageState extends State<HomePage> {
     ParserType.comicsans: 'ComicSans - ID',
     ParserType.mangapark: 'MangaPark - EN',
     ParserType.webtoon: 'Webtoon - ID',
+    ParserType.batoto: 'Batoto - EN',
   };
 
   @override
@@ -81,6 +82,8 @@ class _HomePageState extends State<HomePage> {
       parser = ComicSansParser();
     } else if (selectedParser == ParserType.mangapark) {
       parser = MangaParkParser();
+    } else if (selectedParser == ParserType.batoto) {
+      parser = BatotoParser();
     } else {
       parser = WebtoonParser();
     }
@@ -96,6 +99,8 @@ class _HomePageState extends State<HomePage> {
       (parser as MangaParkParser).dispose();
     } else if (parser is WebtoonParser) {
       (parser as WebtoonParser).dispose();
+    } else if (parser is BatotoParser) {
+      (parser as BatotoParser).dispose();
     }
     super.dispose();
   }
@@ -193,6 +198,8 @@ class _HomePageState extends State<HomePage> {
       (parser as MangaParkParser).dispose();
     } else if (parser is WebtoonParser) {
       (parser as WebtoonParser).dispose();
+    } else if (parser is BatotoParser) {
+      (parser as BatotoParser).dispose();
     }
 
     setState(() {
