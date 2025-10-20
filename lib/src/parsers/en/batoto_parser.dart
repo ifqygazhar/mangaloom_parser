@@ -179,18 +179,31 @@ class BatotoParser extends ComicParser {
     }
 
     // Check active page number
-    final activePage = doc
-        .querySelector('nav ul.pagination > li.page-item.active')
-        ?.text
-        .trim();
-    if (activePage != null) {
-      final activePageNum = int.tryParse(activePage) ?? 0;
-      if (activePageNum != page) {
+    final activePages = doc.querySelectorAll(
+      'nav ul.pagination > li.page-item.active a',
+    );
+    if (activePages.isNotEmpty) {
+      // Ambil halaman aktif terakhir dari pagination
+      final lastActivePage = activePages.last.text.trim();
+
+      // Jika text berisi "..." berarti ini halaman pertama yang menampilkan "1 ..."
+      if (lastActivePage.contains('...')) {
+        // Extract number before "..."
+        final pageNum =
+            int.tryParse(lastActivePage.split('...').first.trim()) ?? 1;
+        return pageNum == page;
+      }
+
+      // Jika text adalah angka biasa
+      final activePageNum = int.tryParse(lastActivePage) ?? 0;
+      if (activePageNum > 0 && activePageNum != page) {
         return false;
       }
     }
 
-    return true;
+    // Jika tidak ada pagination (halaman 1 atau halaman tunggal), periksa apakah ada series-list
+    final seriesList = doc.getElementById('series-list');
+    return seriesList != null && seriesList.children.isNotEmpty;
   }
 
   @override
@@ -230,12 +243,21 @@ class BatotoParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    if (!_hasResults(doc, page)) {
+    // Parse comic list first
+    final items = _parseComicList(doc);
+
+    // Jika tidak ada items, throw exception
+    if (items.isEmpty) {
       throw Exception('Page not found');
     }
 
-    final items = _parseComicList(doc);
-    if (items.isEmpty) {
+    // Check if this is the correct page (optional, untuk validasi)
+    if (!_hasResults(doc, page)) {
+      // Jika validation gagal tapi ada items, kembalikan items
+      // (ini untuk handle edge case di halaman 1)
+      if (items.isNotEmpty) {
+        return items;
+      }
       throw Exception('Page not found');
     }
 
@@ -253,12 +275,21 @@ class BatotoParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    if (!_hasResults(doc, page)) {
+    // Parse comic list first
+    final items = _parseComicList(doc);
+
+    // Jika tidak ada items, throw exception
+    if (items.isEmpty) {
       throw Exception('Page not found');
     }
 
-    final items = _parseComicList(doc);
-    if (items.isEmpty) {
+    // Check if this is the correct page (optional, untuk validasi)
+    if (!_hasResults(doc, page)) {
+      // Jika validation gagal tapi ada items, kembalikan items
+      // (ini untuk handle edge case di halaman 1)
+      if (items.isNotEmpty) {
+        return items;
+      }
       throw Exception('Page not found');
     }
 
@@ -301,12 +332,20 @@ class BatotoParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    if (!_hasResults(doc, page)) {
+    // Parse comic list first
+    final items = _parseComicList(doc);
+
+    // Jika tidak ada items, throw exception
+    if (items.isEmpty) {
       throw Exception('Page not found');
     }
 
-    final items = _parseComicList(doc);
-    if (items.isEmpty) {
+    // Check if this is the correct page (optional, untuk validasi)
+    if (!_hasResults(doc, page)) {
+      // Jika validation gagal tapi ada items, kembalikan items
+      if (items.isNotEmpty) {
+        return items;
+      }
       throw Exception('Page not found');
     }
 
@@ -336,12 +375,20 @@ class BatotoParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    if (!_hasResults(doc, page)) {
+    // Parse comic list first
+    final items = _parseComicList(doc);
+
+    // Jika tidak ada items, throw exception
+    if (items.isEmpty) {
       throw Exception('Page not found');
     }
 
-    final items = _parseComicList(doc);
-    if (items.isEmpty) {
+    // Check if this is the correct page (optional, untuk validasi)
+    if (!_hasResults(doc, page)) {
+      // Jika validation gagal tapi ada items, kembalikan items
+      if (items.isNotEmpty) {
+        return items;
+      }
       throw Exception('Page not found');
     }
 
@@ -367,33 +414,69 @@ class BatotoParser extends ComicParser {
 
     for (final script in scripts) {
       final scriptText = script.text;
-      final genresMatch = RegExp(
-        r'const _genres\s*=\s*(\{[^}]+\})',
-      ).firstMatch(scriptText);
 
-      if (genresMatch != null) {
-        try {
-          final genresJson = genresMatch.group(1)!;
-          final json = jsonDecode(genresJson) as Map<String, dynamic>;
+      // Look for _genres object using more flexible regex
+      final genresIndex = scriptText.indexOf('const _genres =');
+      if (genresIndex == -1) continue;
 
-          for (final key in json.keys) {
-            final item = json[key] as Map<String, dynamic>;
-            final title = item['text'] as String;
-            final file = item['file'] as String;
+      // Find the start of the object
+      final startIndex = scriptText.indexOf('{', genresIndex);
+      if (startIndex == -1) continue;
 
-            _availableGenres.add(
-              Genre(title: _toTitleCase(title), href: '/$file/'),
-            );
+      // Find the matching closing brace
+      var braceCount = 0;
+      var endIndex = -1;
+      for (var i = startIndex; i < scriptText.length; i++) {
+        if (scriptText[i] == '{') {
+          braceCount++;
+        } else if (scriptText[i] == '}') {
+          braceCount--;
+          if (braceCount == 0) {
+            endIndex = i + 1;
+            break;
           }
-
-          return _availableGenres;
-        } catch (e) {
-          throw Exception('Failed to parse genres: $e');
         }
+      }
+
+      if (endIndex == -1) continue;
+
+      try {
+        // Extract the genres object
+        final genresJson = scriptText.substring(startIndex, endIndex);
+
+        // Parse JSON
+        final json = jsonDecode(genresJson) as Map<String, dynamic>;
+
+        // Iterate through all genres
+        for (final key in json.keys) {
+          final item = json[key];
+
+          // Check if item is a Map (genre object)
+          if (item is Map<String, dynamic>) {
+            final title = item['text'] as String?;
+            final file = item['file'] as String?;
+
+            if (title != null && file != null) {
+              _availableGenres.add(
+                Genre(
+                  title: _toTitleCase(title),
+                  href: file, // Simpan file saja, bukan dengan '/'
+                ),
+              );
+            }
+          }
+        }
+
+        // Sort genres alphabetically
+        _availableGenres.sort((a, b) => a.title.compareTo(b.title));
+
+        return _availableGenres;
+      } catch (e) {
+        throw Exception('Failed to parse genres JSON: $e');
       }
     }
 
-    throw Exception('Genres list not found');
+    throw Exception('Genres list not found in scripts');
   }
 
   /// Convert string to title case
