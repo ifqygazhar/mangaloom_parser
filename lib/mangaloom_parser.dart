@@ -15,3 +15,4 @@ export 'src/parsers/id/mangaplus_parser.dart';
 export 'src/parsers/en/mangapark_parser.dart';
 export 'src/parsers/id/webtoon_parser.dart';
 export 'src/parsers/en/batoto_parser.dart';
+export 'src/parsers/id/komiklu_parser.dart';

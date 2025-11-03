@@ -30,7 +30,15 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-enum ParserType { shinigami, comicsans, mangapark, webtoon, batoto, mangaplus }
+enum ParserType {
+  shinigami,
+  comicsans,
+  mangapark,
+  webtoon,
+  batoto,
+  mangaplus,
+  komiklu,
+}
 
 enum TestFunction {
   popular,
@@ -68,6 +76,7 @@ class _HomePageState extends State<HomePage> {
     ParserType.webtoon: 'Webtoon - ID',
     ParserType.batoto: 'Batoto - EN',
     ParserType.mangaplus: 'MangaPlus - ID',
+    ParserType.komiklu: 'Komiklu - ID',
   };
 
   @override
@@ -88,6 +97,8 @@ class _HomePageState extends State<HomePage> {
       parser = BatotoParser();
     } else if (selectedParser == ParserType.mangaplus) {
       parser = MangaPlusParser();
+    } else if (selectedParser == ParserType.komiklu) {
+      parser = KomikluParser();
     } else {
       parser = WebtoonParser();
     }
@@ -107,6 +118,8 @@ class _HomePageState extends State<HomePage> {
       (parser as BatotoParser).dispose();
     } else if (parser is MangaPlusParser) {
       (parser as MangaPlusParser).dispose();
+    } else if (parser is KomikluParser) {
+      (parser as KomikluParser).dispose();
     }
     super.dispose();
   }
@@ -208,6 +221,8 @@ class _HomePageState extends State<HomePage> {
       (parser as BatotoParser).dispose();
     } else if (parser is MangaPlusParser) {
       (parser as MangaPlusParser).dispose();
+    } else if (parser is KomikluParser) {
+      (parser as KomikluParser).dispose();
     }
 
     setState(() {
@@ -1308,6 +1323,7 @@ class _ChapterReaderPageState extends State<ChapterReaderPage> {
           }
 
           if (snapshot.hasError) {
+            debugPrint('Error fetching chapter: ${snapshot.error}');
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

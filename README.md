@@ -32,7 +32,10 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  mangaloom_parser: ^0.0.1
+  mangaloom_parser:
+    git:
+      url: https://github.com/ifqygazhar/mangaloom_parser.git
+      ref: main / or u can use version (v0.0.1)
 ```
 
 Then run:
