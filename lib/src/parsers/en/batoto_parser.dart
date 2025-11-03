@@ -176,12 +176,23 @@ class BatotoParser extends ComicParser {
         final href = a.attributes['href'] ?? '';
         if (href.isEmpty) continue;
 
-        final title = div.querySelector('.item-title')?.text.trim() ?? '';
+        var title = div.querySelector('.item-title')?.text.trim() ?? '';
         if (title.isEmpty) continue;
 
         final thumbnail =
             div.querySelector('img[src]')?.attributes['src'] ?? '';
         final altTitle = div.querySelector('.item-alias')?.text.trim() ?? '';
+
+        // Extract flag code from data-lang attribute
+        final flagElement = div.querySelector('em.item-flag[data-lang]');
+        if (flagElement != null) {
+          final flagCode =
+              flagElement.attributes['data-lang']?.trim().toUpperCase() ?? '';
+          if (flagCode.isNotEmpty) {
+            var code = "[$flagCode]";
+            title = '$code - $title';
+          }
+        }
 
         items.add(
           ComicItem(

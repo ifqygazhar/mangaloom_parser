@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:mangaloom_parser/mangaloom_parser.dart';
 
@@ -1211,6 +1212,90 @@ class _ChapterReaderPageState extends State<ChapterReaderPage> {
     _loadChapter(href);
   }
 
+  /// Build MangaPlus encrypted image widget
+  Widget _buildMangaPlusImage(
+    String imageUrlWithKey,
+    MangaPlusParser parser,
+    int index,
+  ) {
+    return FutureBuilder<Uint8List>(
+      future: parser.fetchImage(imageUrlWithKey),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            padding: const EdgeInsets.all(32.0),
+            child: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 8),
+                  Text('Decoding image...'),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          debugPrint('MangaPlus image error: ${snapshot.error}');
+          return Container(
+            height: 200,
+            color: Colors.grey[300],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.broken_image, size: 48, color: Colors.red),
+                const SizedBox(height: 8),
+                Text('Failed to load image ${index + 1}'),
+                const SizedBox(height: 4),
+                Text(
+                  'Error: ${snapshot.error}',
+                  style: const TextStyle(fontSize: 10),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (!snapshot.hasData) {
+          return Container(
+            height: 200,
+            color: Colors.grey[300],
+            child: const Center(
+              child: Icon(Icons.image_not_supported, size: 48),
+            ),
+          );
+        }
+
+        // Display decoded image
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Image.memory(
+            snapshot.data!,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('Image.memory error: $error');
+              return Container(
+                height: 200,
+                color: Colors.grey[300],
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.broken_image, size: 48),
+                    const SizedBox(height: 8),
+                    Text('Failed to render image ${index + 1}'),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1276,6 +1361,18 @@ class _ChapterReaderPageState extends State<ChapterReaderPage> {
                   itemBuilder: (context, index) {
                     final imageUrl = chapter.panel[index];
                     debugPrint("chapter image URL: $imageUrl");
+
+                    // Check if this is MangaPlus encrypted image
+                    if (widget.parser is MangaPlusParser &&
+                        imageUrl.contains('#')) {
+                      return _buildMangaPlusImage(
+                        imageUrl,
+                        widget.parser as MangaPlusParser,
+                        index,
+                      );
+                    }
+
+                    // Regular image loading for other parsers
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Image.network(
