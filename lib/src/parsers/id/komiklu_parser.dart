@@ -158,7 +158,8 @@ class KomikluParser extends ComicParser {
             href: href,
             thumbnail: thumbnail,
             rating: rating,
-            type: chapter, // Use chapter info as type field
+            chapter: chapter,
+            type: 'Manga',
           ),
         );
       } catch (e) {
@@ -223,7 +224,8 @@ class KomikluParser extends ComicParser {
             href: href,
             thumbnail: thumbnail,
             rating: rating,
-            type: chapter,
+            type: 'Manga',
+            chapter: chapter,
           ),
         );
       } catch (e) {
@@ -398,7 +400,8 @@ class KomikluParser extends ComicParser {
             href: href,
             thumbnail: thumbnail,
             rating: rating,
-            type: year,
+            chapter: year,
+            type: 'Manga',
           ),
         );
       }
