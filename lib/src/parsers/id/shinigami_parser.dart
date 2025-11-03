@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:mangaloom_parser/mangaloom_parser.dart';
+import 'package:mangaloom_parser/src/models/cached_result.dart';
 import 'package:mangaloom_parser/src/utils/make_request_helper.dart';
 
 class ShinigamiParser extends ComicParser {
@@ -8,6 +8,14 @@ class ShinigamiParser extends ComicParser {
   static const String _storageUrl = 'https://storage.shngm.id';
 
   final http.Client _client;
+
+  // Cache untuk list results dengan expiry time
+  final Map<String, CachedResult> _listCache = {};
+  static const Duration _cacheExpiry = Duration(minutes: 5);
+
+  // Limit hasil default untuk performa lebih baik
+  static const int _defaultPageSize = 24;
+  static const int _maxConcurrentRequests = 3;
 
   ShinigamiParser({http.Client? client}) : _client = client ?? http.Client();
 
@@ -19,6 +27,27 @@ class ShinigamiParser extends ComicParser {
 
   @override
   String get language => 'ID';
+
+  /// Check if cache is valid
+  bool _isCacheValid(String key) {
+    final cached = _listCache[key];
+    if (cached == null) return false;
+    return DateTime.now().difference(cached.timestamp) < _cacheExpiry;
+  }
+
+  /// Get from cache
+  List<ComicItem>? _getFromCache(String key) {
+    if (_isCacheValid(key)) {
+      return _listCache[key]?.items;
+    }
+    _listCache.remove(key);
+    return null;
+  }
+
+  /// Save to cache
+  void _saveToCache(String key, List<ComicItem> items) {
+    _listCache[key] = CachedResult(items: items, timestamp: DateTime.now());
+  }
 
   /// Convert country ID to comic type
   String _convertCountryId(String country) {
@@ -48,8 +77,16 @@ class ShinigamiParser extends ComicParser {
 
   @override
   Future<List<ComicItem>> fetchPopular() async {
+    const cacheKey = 'popular-1';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url =
-        '$_baseApiUrl/manga/list?page=1&page_size=24&sort=popularity&sort_order=desc';
+        '$_baseApiUrl/manga/list?page=1&page_size=$_defaultPageSize&sort=popularity&sort_order=desc';
     final data = await helperMakeRequest(
       url: url,
       client: _client,
@@ -57,15 +94,28 @@ class ShinigamiParser extends ComicParser {
     );
 
     final List items = data['data'] as List;
-    return items
+    final results = items
         .map((item) => _convertToComicItem(item as Map<String, dynamic>))
         .toList();
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
   }
 
   @override
   Future<List<ComicItem>> fetchRecommended() async {
+    const cacheKey = 'recommended-1';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url =
-        '$_baseApiUrl/manga/list?page=1&page_size=24&sort=rating&sort_order=desc';
+        '$_baseApiUrl/manga/list?page=1&page_size=$_defaultPageSize&sort=rating&sort_order=desc';
     final data = await helperMakeRequest(
       url: url,
       client: _client,
@@ -73,15 +123,28 @@ class ShinigamiParser extends ComicParser {
     );
 
     final List items = data['data'] as List;
-    return items
+    final results = items
         .map((item) => _convertToComicItem(item as Map<String, dynamic>))
         .toList();
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
   }
 
   @override
   Future<List<ComicItem>> fetchNewest({int page = 1}) async {
+    final cacheKey = 'newest-$page';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url =
-        '$_baseApiUrl/manga/list?page=$page&page_size=24&sort=latest&sort_order=desc';
+        '$_baseApiUrl/manga/list?page=$page&page_size=$_defaultPageSize&sort=latest&sort_order=desc';
     final data = await helperMakeRequest(
       url: url,
       client: _client,
@@ -93,14 +156,28 @@ class ShinigamiParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    return items
+    final results = items
         .map((item) => _convertToComicItem(item as Map<String, dynamic>))
         .toList();
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
   }
 
   @override
   Future<List<ComicItem>> fetchAll({int page = 1}) async {
-    final url = '$_baseApiUrl/manga/list?page=$page&page_size=24';
+    final cacheKey = 'all-$page';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
+    final url =
+        '$_baseApiUrl/manga/list?page=$page&page_size=$_defaultPageSize';
     final data = await helperMakeRequest(
       url: url,
       client: _client,
@@ -112,15 +189,29 @@ class ShinigamiParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    return items
+    final results = items
         .map((item) => _convertToComicItem(item as Map<String, dynamic>))
         .toList();
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
   }
 
   @override
   Future<List<ComicItem>> search(String query) async {
     final encodedQuery = Uri.encodeComponent(query);
-    final url = '$_baseApiUrl/manga/list?q=$encodedQuery&page=1&page_size=24';
+    final cacheKey = 'search-$encodedQuery';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
+    final url =
+        '$_baseApiUrl/manga/list?q=$encodedQuery&page=1&page_size=$_defaultPageSize';
     final data = await helperMakeRequest(
       url: url,
       client: _client,
@@ -132,16 +223,29 @@ class ShinigamiParser extends ComicParser {
       throw Exception('No results found');
     }
 
-    return items
+    final results = items
         .map((item) => _convertToComicItem(item as Map<String, dynamic>))
         .toList();
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
   }
 
   @override
   Future<List<ComicItem>> fetchByGenre(String genre, {int page = 1}) async {
     final encodedGenre = Uri.encodeComponent(genre);
+    final cacheKey = 'genre-$encodedGenre-$page';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url =
-        '$_baseApiUrl/manga/list?page=$page&page_size=24&genre_include=$encodedGenre&genre_include_mode=and&sort=popularity&sort_order=desc';
+        '$_baseApiUrl/manga/list?page=$page&page_size=$_defaultPageSize&genre_include=$encodedGenre&genre_include_mode=and&sort=popularity&sort_order=desc';
     final data = await helperMakeRequest(
       url: url,
       client: _client,
@@ -153,9 +257,14 @@ class ShinigamiParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    return items
+    final results = items
         .map((item) => _convertToComicItem(item as Map<String, dynamic>))
         .toList();
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
   }
 
   @override
@@ -166,7 +275,16 @@ class ShinigamiParser extends ComicParser {
     String? type,
     String? order,
   }) async {
-    var url = '$_baseApiUrl/manga/list?page=$page&page_size=24';
+    // Build cache key from parameters
+    final cacheKey = 'filtered-$page-$genre-$status-$type-$order';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
+    var url = '$_baseApiUrl/manga/list?page=$page&page_size=$_defaultPageSize';
 
     // Add sorting
     if (order != null && order.isNotEmpty) {
@@ -223,9 +341,79 @@ class ShinigamiParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    return items
+    final results = items
         .map((item) => _convertToComicItem(item as Map<String, dynamic>))
         .toList();
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
+  }
+
+  /// Batch fetch multiple lists efficiently
+  Future<Map<String, List<ComicItem>>> fetchMultipleLists({
+    bool popular = false,
+    bool recommended = false,
+    bool newest = false,
+    int limit = 6,
+  }) async {
+    final Map<String, List<ComicItem>> results = {};
+    final List<Future<void>> futures = [];
+
+    if (popular) {
+      futures.add(
+        fetchPopular().then((items) {
+          results['popular'] = items.take(limit).toList();
+        }),
+      );
+    }
+
+    if (recommended) {
+      futures.add(
+        fetchRecommended().then((items) {
+          results['recommended'] = items.take(limit).toList();
+        }),
+      );
+    }
+
+    if (newest) {
+      futures.add(
+        fetchNewest().then((items) {
+          results['newest'] = items.take(limit).toList();
+        }),
+      );
+    }
+
+    // Wait for all requests to complete
+    await Future.wait(futures);
+
+    return results;
+  }
+
+  /// Fetch multiple genres in batch
+  Future<Map<String, List<ComicItem>>> fetchMultipleGenres(
+    List<String> genres, {
+    int limit = 6,
+  }) async {
+    final Map<String, List<ComicItem>> results = {};
+
+    // Limit concurrent requests
+    for (var i = 0; i < genres.length; i += _maxConcurrentRequests) {
+      final batch = genres.skip(i).take(_maxConcurrentRequests);
+      final futures = batch.map((genre) async {
+        try {
+          final items = await fetchByGenre(genre);
+          results[genre] = items.take(limit).toList();
+        } catch (e) {
+          results[genre] = [];
+        }
+      });
+
+      await Future.wait(futures);
+    }
+
+    return results;
   }
 
   @override
@@ -373,8 +561,19 @@ class ShinigamiParser extends ComicParser {
     );
   }
 
+  /// Clear all caches
+  void clearCache() {
+    _listCache.clear();
+  }
+
+  /// Clear only list cache
+  void clearListCache() {
+    _listCache.clear();
+  }
+
   /// Dispose HTTP client
   void dispose() {
     _client.close();
+    clearCache();
   }
 }

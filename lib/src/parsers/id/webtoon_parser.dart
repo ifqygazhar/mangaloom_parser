@@ -3,6 +3,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart';
 import 'package:http/http.dart' as http;
 import 'package:mangaloom_parser/mangaloom_parser.dart';
+import 'package:mangaloom_parser/src/models/cached_result.dart';
 
 class WebtoonParser extends ComicParser {
   static const String _mobileApiDomain = 'm.webtoons.com';
@@ -13,6 +14,14 @@ class WebtoonParser extends ComicParser {
 
   // Cache viewer links for chapters
   final Map<String, String> _viewerLinkCache = {};
+
+  // NEW: Cache untuk list results dengan expiry time
+  final Map<String, CachedResult> _listCache = {};
+  static const Duration _cacheExpiry = Duration(minutes: 5);
+
+  // NEW: Limit hasil default untuk performa lebih baik
+  static const int _defaultPageSize = 10;
+  static const int _maxConcurrentRequests = 3;
 
   WebtoonParser({http.Client? client}) : _client = client ?? http.Client();
 
@@ -27,8 +36,7 @@ class WebtoonParser extends ComicParser {
 
   /// Common headers for all requests
   Map<String, String> get _headers => {
-    'User-Agent':
-        'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
+    'User-Agent': 'nApps (Android 12;; linewebtoon; 3.1.0)',
     'Referer': baseUrl,
   };
 
@@ -83,18 +91,37 @@ class WebtoonParser extends ComicParser {
     return 'https://$domain$url';
   }
 
-  /// Create ComicItem from HTML element
+  /// NEW: Check if cache is valid
+  bool _isCacheValid(String key) {
+    final cached = _listCache[key];
+    if (cached == null) return false;
+    return DateTime.now().difference(cached.timestamp) < _cacheExpiry;
+  }
+
+  /// NEW: Get from cache
+  List<ComicItem>? _getFromCache(String key) {
+    if (_isCacheValid(key)) {
+      return _listCache[key]?.items;
+    }
+    _listCache.remove(key);
+    return null;
+  }
+
+  /// NEW: Save to cache
+  void _saveToCache(String key, List<ComicItem> items) {
+    _listCache[key] = CachedResult(items: items, timestamp: DateTime.now());
+  }
+
+  /// Create ComicItem from HTML element (OPTIMIZED)
   ComicItem _createMangaFromElement(Element element, {Genre? selectedGenre}) {
     final href = element.attributes['href'] ?? '';
     final titleNo = _extractTitleNo(href);
 
-    // Get title - select returns first matching element
+    // Get title - optimized selector
     final title =
-        element.querySelector('.title')?.text.trim() ??
-        element.querySelector('.card_title')?.text.trim() ??
-        '';
+        element.querySelector('.title, .card_title')?.text.trim() ?? '';
 
-    // Get thumbnail - directly select img and get src attribute
+    // Get thumbnail - optimized to get src directly
     final thumbnailUrl = element.querySelector('img')?.attributes['src'] ?? '';
 
     return ComicItem(
@@ -119,8 +146,19 @@ class WebtoonParser extends ComicParser {
     }
   }
 
-  /// Fetch list with specific ranking type
-  Future<List<ComicItem>> _fetchList(String rankingType, {int page = 1}) async {
+  /// OPTIMIZED: Fetch list with caching and limit
+  Future<List<ComicItem>> _fetchList(
+    String rankingType, {
+    int page = 1,
+    int limit = _defaultPageSize,
+  }) async {
+    // Check cache first
+    final cacheKey = '$rankingType-$page-$limit';
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url = '$baseUrl/$_languageCode/ranking/$rankingType';
     final response = await _client.get(Uri.parse(url), headers: _headers);
 
@@ -137,40 +175,125 @@ class WebtoonParser extends ComicParser {
       return [];
     }
 
-    // Webtoons loads all items at once, simulate pagination client-side
-    final offset = (page - 1) * 10;
-    return elements
+    // Optimized pagination with limit
+    final offset = (page - 1) * limit;
+    final results = elements
         .map((e) => _createMangaFromElement(e))
-        .skip(offset) // Skip based on page
-        .take(10) // Take 20 items per page
+        .skip(offset)
+        .take(limit)
         .toList();
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
+  }
+
+  /// NEW: Batch fetch multiple lists efficiently
+  Future<Map<String, List<ComicItem>>> fetchMultipleLists({
+    bool popular = false,
+    bool recommended = false,
+    bool newest = false,
+    int limit = 6,
+  }) async {
+    final Map<String, List<ComicItem>> results = {};
+    final List<Future<void>> futures = [];
+
+    if (popular) {
+      futures.add(
+        _fetchList('popular', limit: limit).then((items) {
+          results['popular'] = items;
+        }),
+      );
+    }
+
+    if (recommended) {
+      futures.add(
+        _fetchList('trending', limit: limit).then((items) {
+          results['recommended'] = items;
+        }),
+      );
+    }
+
+    if (newest) {
+      futures.add(
+        _fetchList('originals', limit: limit).then((items) {
+          results['newest'] = items;
+        }),
+      );
+    }
+
+    // Wait for all requests to complete
+    await Future.wait(futures);
+
+    return results;
+  }
+
+  /// NEW: Fetch multiple genres in batch
+  Future<Map<String, List<ComicItem>>> fetchMultipleGenres(
+    List<String> genres, {
+    int limit = 6,
+  }) async {
+    final Map<String, List<ComicItem>> results = {};
+
+    // Limit concurrent requests
+    for (var i = 0; i < genres.length; i += _maxConcurrentRequests) {
+      final batch = genres.skip(i).take(_maxConcurrentRequests);
+      final futures = batch.map((genre) async {
+        try {
+          final items = await fetchByGenre(genre, page: 1, limit: limit);
+          results[genre] = items;
+        } catch (e) {
+          results[genre] = [];
+        }
+      });
+
+      await Future.wait(futures);
+    }
+
+    return results;
   }
 
   @override
-  Future<List<ComicItem>> fetchPopular() async {
-    return _fetchList('popular');
+  Future<List<ComicItem>> fetchPopular({int limit = _defaultPageSize}) async {
+    return _fetchList('popular', limit: limit);
   }
 
   @override
-  Future<List<ComicItem>> fetchRecommended() async {
-    return _fetchList('trending');
+  Future<List<ComicItem>> fetchRecommended({
+    int limit = _defaultPageSize,
+  }) async {
+    return _fetchList('trending', limit: limit);
   }
 
   @override
-  Future<List<ComicItem>> fetchNewest({int page = 1}) async {
-    return _fetchList('originals', page: page);
+  Future<List<ComicItem>> fetchNewest({
+    int page = 1,
+    int limit = _defaultPageSize,
+  }) async {
+    return _fetchList('originals', page: page, limit: limit);
   }
 
   @override
-  Future<List<ComicItem>> fetchAll({int page = 1}) async {
-    return _fetchList('popular', page: page);
+  Future<List<ComicItem>> fetchAll({
+    int page = 1,
+    int limit = _defaultPageSize,
+  }) async {
+    return _fetchList('popular', page: page, limit: limit);
   }
 
   @override
   Future<List<ComicItem>> search(String query) async {
     final encodedQuery = Uri.encodeComponent(query);
-    final url = '$baseUrl/$_languageCode/search?keyword=$encodedQuery';
+    final cacheKey = 'search-$encodedQuery';
 
+    // Check cache
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
+    final url = '$baseUrl/$_languageCode/search?keyword=$encodedQuery';
     final response = await _client.get(Uri.parse(url), headers: _headers);
 
     if (response.statusCode != 200) {
@@ -186,11 +309,27 @@ class WebtoonParser extends ComicParser {
       throw Exception('No results found');
     }
 
-    return elements.map((e) => _createMangaFromElement(e)).toList();
+    final results = elements.map((e) => _createMangaFromElement(e)).toList();
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
   }
 
   @override
-  Future<List<ComicItem>> fetchByGenre(String genre, {int page = 1}) async {
+  Future<List<ComicItem>> fetchByGenre(
+    String genre, {
+    int page = 1,
+    int limit = _defaultPageSize,
+  }) async {
+    // Check cache first
+    final cacheKey = 'genre-$genre-$page-$limit';
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     // Find genre URL path
     final genreObj = _availableGenres.firstWhere(
       (g) => g.title.toLowerCase() == genre.toLowerCase(),
@@ -217,13 +356,18 @@ class WebtoonParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    // Client-side pagination
-    final offset = (page - 1) * 10;
-    return elements
+    // Client-side pagination with limit
+    final offset = (page - 1) * limit;
+    final results = elements
         .map((e) => _createMangaFromElement(e, selectedGenre: genreObj))
         .skip(offset)
-        .take(10)
+        .take(limit)
         .toList();
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
   }
 
   @override
@@ -233,10 +377,11 @@ class WebtoonParser extends ComicParser {
     String? status,
     String? type,
     String? order,
+    int limit = _defaultPageSize,
   }) async {
     // Webtoons doesn't support complex filtering, use genre if provided
     if (genre != null && genre.isNotEmpty) {
-      return fetchByGenre(genre, page: page);
+      return fetchByGenre(genre, page: page, limit: limit);
     }
 
     // Use order if provided
@@ -245,7 +390,7 @@ class WebtoonParser extends ComicParser {
         : order == 'latest'
         ? 'originals'
         : 'popular';
-    return _fetchList(rankingType, page: page);
+    return _fetchList(rankingType, page: page, limit: limit);
   }
 
   @override
@@ -472,45 +617,29 @@ class WebtoonParser extends ComicParser {
         doc.querySelector('meta[property="og:title"]')?.attributes['content'] ??
         'Episode $episodeNo';
 
-    // Extract images
+    // Extract images (OPTIMIZED: single query with multiple selectors)
     List<String> panels = [];
 
-    // Try multiple selectors
-    var imageElements = doc.querySelectorAll('div#_imageList > img');
-    if (imageElements.isNotEmpty) {
-      panels = imageElements
-          .map((e) {
-            final url = e.attributes['data-url'] ?? e.attributes['src'] ?? '';
-            return url;
-          })
-          .where((url) => url.isNotEmpty)
-          .toList();
-    }
+    // Try multiple selectors in priority order
+    final selectors = [
+      'div#_imageList > img',
+      'canvas[data-url]',
+      'img[src*="$_staticDomain"], img[data-url*="$_staticDomain"]',
+    ];
 
-    // Try canvas elements
-    if (panels.isEmpty) {
-      imageElements = doc.querySelectorAll('canvas[data-url]');
-      panels = imageElements
-          .map((e) {
-            final url = e.attributes['data-url'] ?? '';
-            return url;
-          })
-          .where((url) => url.isNotEmpty)
-          .toList();
-    }
+    for (final selector in selectors) {
+      final imageElements = doc.querySelectorAll(selector);
+      if (imageElements.isNotEmpty) {
+        panels = imageElements
+            .map((e) {
+              final url = e.attributes['data-url'] ?? e.attributes['src'] ?? '';
+              return url;
+            })
+            .where((url) => url.isNotEmpty)
+            .toList();
 
-    // Try any image with static domain
-    if (panels.isEmpty) {
-      imageElements = doc.querySelectorAll(
-        'img[src*="$_staticDomain"], img[data-url*="$_staticDomain"]',
-      );
-      panels = imageElements
-          .map((e) {
-            final url = e.attributes['data-url'] ?? e.attributes['src'] ?? '';
-            return url;
-          })
-          .where((url) => url.isNotEmpty && url.contains(_staticDomain))
-          .toList();
+        if (panels.isNotEmpty) break;
+      }
     }
 
     if (panels.isEmpty) {
@@ -555,9 +684,21 @@ class WebtoonParser extends ComicParser {
     return ReadChapter(title: title, prev: prev, next: next, panel: panels);
   }
 
+  /// NEW: Clear all caches
+  void clearCache() {
+    _listCache.clear();
+    _viewerLinkCache.clear();
+  }
+
+  /// NEW: Clear only list cache
+  void clearListCache() {
+    _listCache.clear();
+  }
+
   /// Dispose HTTP client
   void dispose() {
     _client.close();
+    clearCache();
   }
 
   // Getter for domain (used in _toAbsoluteUrl)

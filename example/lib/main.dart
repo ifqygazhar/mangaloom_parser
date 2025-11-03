@@ -29,7 +29,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-enum ParserType { shinigami, comicsans, mangapark, webtoon, batoto }
+enum ParserType { shinigami, comicsans, mangapark, webtoon, batoto, mangaplus }
 
 enum TestFunction {
   popular,
@@ -66,6 +66,7 @@ class _HomePageState extends State<HomePage> {
     ParserType.mangapark: 'MangaPark - EN',
     ParserType.webtoon: 'Webtoon - ID',
     ParserType.batoto: 'Batoto - EN',
+    ParserType.mangaplus: 'MangaPlus - ID',
   };
 
   @override
@@ -84,6 +85,8 @@ class _HomePageState extends State<HomePage> {
       parser = MangaParkParser();
     } else if (selectedParser == ParserType.batoto) {
       parser = BatotoParser();
+    } else if (selectedParser == ParserType.mangaplus) {
+      parser = MangaPlusParser();
     } else {
       parser = WebtoonParser();
     }
@@ -101,6 +104,8 @@ class _HomePageState extends State<HomePage> {
       (parser as WebtoonParser).dispose();
     } else if (parser is BatotoParser) {
       (parser as BatotoParser).dispose();
+    } else if (parser is MangaPlusParser) {
+      (parser as MangaPlusParser).dispose();
     }
     super.dispose();
   }
@@ -200,6 +205,8 @@ class _HomePageState extends State<HomePage> {
       (parser as WebtoonParser).dispose();
     } else if (parser is BatotoParser) {
       (parser as BatotoParser).dispose();
+    } else if (parser is MangaPlusParser) {
+      (parser as MangaPlusParser).dispose();
     }
 
     setState(() {
@@ -1268,6 +1275,7 @@ class _ChapterReaderPageState extends State<ChapterReaderPage> {
                   itemCount: chapter.panel.length,
                   itemBuilder: (context, index) {
                     final imageUrl = chapter.panel[index];
+                    debugPrint("chapter image URL: $imageUrl");
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Image.network(

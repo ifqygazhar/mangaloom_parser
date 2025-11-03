@@ -6,6 +6,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart';
 import 'package:http/http.dart' as http;
 import 'package:mangaloom_parser/mangaloom_parser.dart';
+import 'package:mangaloom_parser/src/models/cached_result.dart';
 import 'package:flutter_js/flutter_js.dart';
 
 final jsRuntime = getJavascriptRuntime();
@@ -14,6 +15,13 @@ class BatotoParser extends ComicParser {
   static const String _baseUrl = 'https://ato.to';
 
   final http.Client _client;
+
+  // Cache untuk list results dengan expiry time
+  final Map<String, CachedResult> _listCache = {};
+  static const Duration _cacheExpiry = Duration(minutes: 5);
+
+  // Limit concurrent requests untuk batch operations
+  static const int _maxConcurrentRequests = 3;
 
   BatotoParser({http.Client? client}) : _client = client ?? http.Client();
 
@@ -35,6 +43,27 @@ class BatotoParser extends ComicParser {
 
   /// Available genres for Batoto
   static final List<Genre> _availableGenres = [];
+
+  /// Check if cache is valid
+  bool _isCacheValid(String key) {
+    final cached = _listCache[key];
+    if (cached == null) return false;
+    return DateTime.now().difference(cached.timestamp) < _cacheExpiry;
+  }
+
+  /// Get from cache
+  List<ComicItem>? _getFromCache(String key) {
+    if (_isCacheValid(key)) {
+      return _listCache[key]?.items;
+    }
+    _listCache.remove(key);
+    return null;
+  }
+
+  /// Save to cache
+  void _saveToCache(String key, List<ComicItem> items) {
+    _listCache[key] = CachedResult(items: items, timestamp: DateTime.now());
+  }
 
   /// Helper to make absolute URL
   String _toAbsoluteUrl(String url) {
@@ -208,6 +237,14 @@ class BatotoParser extends ComicParser {
 
   @override
   Future<List<ComicItem>> fetchPopular() async {
+    const cacheKey = 'popular-1';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url = '$baseUrl/browse?sort=views_a.za';
     final response = await _client.get(Uri.parse(url), headers: _headers);
 
@@ -216,11 +253,24 @@ class BatotoParser extends ComicParser {
     }
 
     final doc = html_parser.parse(response.body);
-    return _parseComicList(doc);
+    final results = _parseComicList(doc);
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
   }
 
   @override
   Future<List<ComicItem>> fetchRecommended() async {
+    const cacheKey = 'recommended-1';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url = '$baseUrl/browse?sort=views_w.za';
     final response = await _client.get(Uri.parse(url), headers: _headers);
 
@@ -229,11 +279,24 @@ class BatotoParser extends ComicParser {
     }
 
     final doc = html_parser.parse(response.body);
-    return _parseComicList(doc);
+    final results = _parseComicList(doc);
+
+    // Save to cache
+    _saveToCache(cacheKey, results);
+
+    return results;
   }
 
   @override
   Future<List<ComicItem>> fetchNewest({int page = 1}) async {
+    final cacheKey = 'newest-$page';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url = '$baseUrl/browse?sort=create.za&page=$page';
     final response = await _client.get(Uri.parse(url), headers: _headers);
 
@@ -256,16 +319,29 @@ class BatotoParser extends ComicParser {
       // Jika validation gagal tapi ada items, kembalikan items
       // (ini untuk handle edge case di halaman 1)
       if (items.isNotEmpty) {
+        // Save to cache
+        _saveToCache(cacheKey, items);
         return items;
       }
       throw Exception('Page not found');
     }
+
+    // Save to cache
+    _saveToCache(cacheKey, items);
 
     return items;
   }
 
   @override
   Future<List<ComicItem>> fetchAll({int page = 1}) async {
+    final cacheKey = 'all-$page';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url = '$baseUrl/browse?sort=update.za&page=$page';
     final response = await _client.get(Uri.parse(url), headers: _headers);
 
@@ -288,10 +364,15 @@ class BatotoParser extends ComicParser {
       // Jika validation gagal tapi ada items, kembalikan items
       // (ini untuk handle edge case di halaman 1)
       if (items.isNotEmpty) {
+        // Save to cache
+        _saveToCache(cacheKey, items);
         return items;
       }
       throw Exception('Page not found');
     }
+
+    // Save to cache
+    _saveToCache(cacheKey, items);
 
     return items;
   }
@@ -299,6 +380,14 @@ class BatotoParser extends ComicParser {
   @override
   Future<List<ComicItem>> search(String query) async {
     final encodedQuery = Uri.encodeComponent(query);
+    final cacheKey = 'search-$encodedQuery';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url = '$baseUrl/search?word=$encodedQuery';
 
     final response = await _client.get(Uri.parse(url), headers: _headers);
@@ -318,11 +407,22 @@ class BatotoParser extends ComicParser {
       throw Exception('No results found');
     }
 
+    // Save to cache
+    _saveToCache(cacheKey, items);
+
     return items;
   }
 
   @override
   Future<List<ComicItem>> fetchByGenre(String genre, {int page = 1}) async {
+    final cacheKey = 'genre-$genre-$page';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final url = '$baseUrl/browse?genres=$genre&page=$page';
     final response = await _client.get(Uri.parse(url), headers: _headers);
 
@@ -344,10 +444,15 @@ class BatotoParser extends ComicParser {
     if (!_hasResults(doc, page)) {
       // Jika validation gagal tapi ada items, kembalikan items
       if (items.isNotEmpty) {
+        // Save to cache
+        _saveToCache(cacheKey, items);
         return items;
       }
       throw Exception('Page not found');
     }
+
+    // Save to cache
+    _saveToCache(cacheKey, items);
 
     return items;
   }
@@ -360,6 +465,15 @@ class BatotoParser extends ComicParser {
     String? type,
     String? order,
   }) async {
+    // Build cache key from parameters
+    final cacheKey = 'filtered-$page-$genre-$status-$type-$order';
+
+    // Check cache first
+    final cached = _getFromCache(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     final sortParam = order != null ? _getSortOrderParam(order) : 'update.za';
     final genreParam = genre ?? '';
     final statusParam = status ?? '';
@@ -387,10 +501,15 @@ class BatotoParser extends ComicParser {
     if (!_hasResults(doc, page)) {
       // Jika validation gagal tapi ada items, kembalikan items
       if (items.isNotEmpty) {
+        // Save to cache
+        _saveToCache(cacheKey, items);
         return items;
       }
       throw Exception('Page not found');
     }
+
+    // Save to cache
+    _saveToCache(cacheKey, items);
 
     return items;
   }
@@ -477,6 +596,71 @@ class BatotoParser extends ComicParser {
     }
 
     throw Exception('Genres list not found in scripts');
+  }
+
+  /// Batch fetch multiple lists efficiently
+  Future<Map<String, List<ComicItem>>> fetchMultipleLists({
+    bool popular = false,
+    bool recommended = false,
+    bool newest = false,
+    int limit = 6,
+  }) async {
+    final Map<String, List<ComicItem>> results = {};
+    final List<Future<void>> futures = [];
+
+    if (popular) {
+      futures.add(
+        fetchPopular().then((items) {
+          results['popular'] = items.take(limit).toList();
+        }),
+      );
+    }
+
+    if (recommended) {
+      futures.add(
+        fetchRecommended().then((items) {
+          results['recommended'] = items.take(limit).toList();
+        }),
+      );
+    }
+
+    if (newest) {
+      futures.add(
+        fetchNewest().then((items) {
+          results['newest'] = items.take(limit).toList();
+        }),
+      );
+    }
+
+    // Wait for all requests to complete
+    await Future.wait(futures);
+
+    return results;
+  }
+
+  /// Fetch multiple genres in batch
+  Future<Map<String, List<ComicItem>>> fetchMultipleGenres(
+    List<String> genres, {
+    int limit = 6,
+  }) async {
+    final Map<String, List<ComicItem>> results = {};
+
+    // Limit concurrent requests
+    for (var i = 0; i < genres.length; i += _maxConcurrentRequests) {
+      final batch = genres.skip(i).take(_maxConcurrentRequests);
+      final futures = batch.map((genre) async {
+        try {
+          final items = await fetchByGenre(genre);
+          results[genre] = items.take(limit).toList();
+        } catch (e) {
+          results[genre] = [];
+        }
+      });
+
+      await Future.wait(futures);
+    }
+
+    return results;
   }
 
   /// Convert string to title case
@@ -861,8 +1045,19 @@ class BatotoParser extends ComicParser {
     );
   }
 
+  /// Clear all caches
+  void clearCache() {
+    _listCache.clear();
+  }
+
+  /// Clear only list cache
+  void clearListCache() {
+    _listCache.clear();
+  }
+
   /// Dispose HTTP client
   void dispose() {
     _client.close();
+    clearCache();
   }
 }
