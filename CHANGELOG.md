@@ -5,6 +5,106 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2025-11-03
+
+### Added
+
+- 🎨 **KomikluParser** - New parser for Komiklu (v2.komiklu.com) Indonesian comic source
+- 🌐 Full support for Komiklu v2 with AJAX-based filtering
+- 🔍 JSON API integration for search functionality
+- 📊 Multiple sorting options (rating-desc, newest, year-desc)
+- 🎯 Advanced genre filtering with 24 available genres
+- 📄 Pagination support for browse all comics
+- 🏷️ **Flag Code Display** - BatotoParser now shows language codes in titles (e.g., "ID - Title")
+- ⚡ **Cache System** - Implemented 5-minute cache for all parsers:
+  - ShinigamiParser with cache infrastructure
+  - ComicSansParser with cache support
+  - BatotoParser with cached genre and list operations
+  - MangaParkParser with cache management
+  - KomikluParser with comprehensive caching
+- 🚀 **Batch Operations** - Efficient concurrent data fetching:
+  - `fetchMultipleLists()` - Fetch multiple list types at once
+  - `fetchMultipleGenres()` - Batch genre fetching with concurrency limits (max 3)
+- 🎨 **MangaPlus Encrypted Images** - Support for rendering XOR-encrypted chapter images
+  - Automatic detection of encrypted images (URL contains '#')
+  - FutureBuilder integration for async decryption
+  - XOR cipher decryption with hex keys
+
+### Features
+
+- 📱 **KomikluParser API**:
+  - `fetchPopular()` - Most popular by rating
+  - `fetchRecommended()` - Newest releases
+  - `fetchNewest({page})` - Sorted by year (AJAX, no pagination)
+  - `fetchAll({page})` - All comics with page.php pagination
+  - `search(query)` - JSON API search with detailed results
+  - `fetchByGenre(genre, {page})` - Filter by genre (AJAX)
+  - `fetchFiltered({page, genre, order})` - Combined filtering
+  - `fetchGenres()` - Hardcoded 24 genres list
+  - `fetchDetail(href)` - Comic details with robust parsing
+  - `fetchChapter(href)` - Chapter reader with navigation
+  - `fetchMultipleLists()` - Batch fetch popular/recommended/newest
+  - `fetchMultipleGenres()` - Concurrent genre fetching
+- 🔧 **Cache Management**:
+  - `clearCache()` - Clear all caches
+  - `clearListCache()` - Clear only list caches
+  - Automatic cache expiry (5 minutes)
+  - Cache validation with timestamp checking
+- 🎨 **Enhanced Parsers**:
+  - Flag code detection in BatotoParser (from `data-lang` attribute)
+  - MangaPlus encrypted image rendering in example app
+  - Improved URL normalization across all parsers
+
+### Fixed
+
+- 🐛 **KomikluParser URL Handling**:
+  - Fixed `fetchDetail` to handle hrefs with or without leading slash
+  - Corrected relative URL normalization
+  - Fixed href construction to match Golang service behavior
+- 🔧 **CSS Selector Compatibility**:
+  - Replaced jQuery-style `:contains()` with standard CSS + manual text matching
+  - Fixed chapter navigation detection (Previous/Next buttons)
+  - Enhanced link parsing with proper fallback logic
+- ✅ **Path Normalization**:
+  - Improved `_toAbsoluteUrl` to handle "comic_detail.php?title=X" format
+  - Enhanced `_toRelativeUrl` to ensure leading slashes
+  - Fixed query string preservation in URLs
+- 🖼️ **Image Handling**:
+  - Fixed MangaPlus encrypted image detection
+  - Corrected Uint8List import for binary data
+  - Enhanced error states in image loading
+
+### Changed
+
+- 🔄 Updated all parsers to use consistent cache infrastructure
+- ⚡ Improved concurrent request handling with limits
+- 🎨 Enhanced error messages with detailed context
+- 🔧 Standardized URL handling across all parsers
+- 📖 Better chapter navigation with multiple selector fallbacks
+- 🎯 Optimized genre fetching with caching strategies
+
+### Technical Details
+
+- 📦 **Cache Implementation**: Map-based with timestamp validation
+- 🔒 **Concurrency Control**: Max 3 concurrent requests for batch operations
+- ⚡ **Performance**: 5-minute cache expiry balances freshness and efficiency
+- 🎨 **Code Quality**: Consistent patterns across all parser implementations
+- 🧪 **Compatibility**:
+  - Standard CSS selectors (no jQuery extensions)
+  - Proper handling of relative/absolute URLs
+  - Query string preservation in href parsing
+- 🔐 **Security**: XOR cipher for MangaPlus image decryption
+
+### Notes
+
+- KomikluParser uses dual parsing methods:
+  - `_parseComicListFromArticles()` for AJAX responses
+  - `_parseComicListFromPage()` for page.php with different structure
+- Search API returns JSON with rich metadata (author, year, genres, status)
+- Genre list is hardcoded (24 genres) as per site structure
+- AJAX endpoints don't support pagination (always return full results)
+- Flag codes displayed in uppercase (e.g., "ID", "EN", "JP")
+
 ## [0.0.5] - 2025-10-20
 
 ### Added
@@ -143,6 +243,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Error handling guidelines
 - ✅ Contributing guidelines
 
+[0.1.0]: https://github.com/ifqygazhar/mangaloom_parser/releases/tag/v0.1.0
 [0.0.5]: https://github.com/ifqygazhar/mangaloom_parser/releases/tag/v0.0.5
 [0.0.2]: https://github.com/ifqygazhar/mangaloom_parser/releases/tag/v0.0.2
 [0.0.1]: https://github.com/ifqygazhar/mangaloom_parser/releases/tag/v0.0.1
