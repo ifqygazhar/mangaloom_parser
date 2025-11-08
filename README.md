@@ -7,6 +7,10 @@ A powerful and flexible Flutter package for parsing comic/manga websites. Easily
 [![Pub Version](https://img.shields.io/pub/v/mangaloom_parser.svg)](https://pub.dev/packages/mangaloom_parser)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+## Download
+
+<a href='https://play.google.com/store/apps/details?id=id.mangaloom.app&hl=id'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height='80'/></a>
+
 ## ✨ Features
 
 - 🔥 **Multiple Parser Support** - Built-in support for multiple comic sources
