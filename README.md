@@ -25,6 +25,9 @@ A powerful and flexible Flutter package for parsing comic/manga websites. Easily
 | **ComicSansParser** | CosmicScans | ID       | ✅ Active |
 | **MangaparkParser** | Mangapark   | EN       | ✅ Active |
 | **WebtoonParser**   | Webtoon     | ID       | ✅ Active |
+| **BatotoParser**    | Batoto      | EN       | ✅ Active |
+| **MangaplusParser** | Mangaplus   | ID       | ✅ Active |
+| **KomikluParser**   | Komiklu     | ID       | ✅ Active |
 
 ## 📦 Installation
 
@@ -467,7 +470,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Thanks to all comic sources for providing content
 - Inspired by the need for a unified comic parsing library
-- Built with ❤️ using Flutter
+- Built with 💙 using Dart & Flutter
 
 ## 📧 Contact
 
@@ -475,4 +478,4 @@ If you have any questions or suggestions, feel free to open an issue on GitHub.
 
 ---
 
-Made with ❤️ by [ifqygazhar](https://github.com/ifqygazhar)
+Made with 💙 by [ifqygazhar](https://github.com/ifqygazhar)
