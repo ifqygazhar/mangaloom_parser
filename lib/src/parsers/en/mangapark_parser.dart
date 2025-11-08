@@ -3,6 +3,7 @@ import 'package:html/dom.dart';
 import 'package:http/http.dart' as http;
 import 'package:mangaloom_parser/mangaloom_parser.dart';
 import 'package:mangaloom_parser/src/models/cached_result.dart';
+import 'package:mangaloom_parser/src/utils/cache.dart';
 
 class MangaParkParser extends ComicParser {
   static const String _baseUrl = 'https://comicpark.to';
@@ -11,7 +12,6 @@ class MangaParkParser extends ComicParser {
 
   // Cache untuk list results dengan expiry time
   final Map<String, CachedResult> _listCache = {};
-  static const Duration _cacheExpiry = Duration(minutes: 5);
 
   // Limit concurrent requests untuk batch operations
   static const int _maxConcurrentRequests = 3;
@@ -42,7 +42,7 @@ class MangaParkParser extends ComicParser {
   bool _isCacheValid(String key) {
     final cached = _listCache[key];
     if (cached == null) return false;
-    return DateTime.now().difference(cached.timestamp) < _cacheExpiry;
+    return DateTime.now().difference(cached.timestamp) < cacheExpiry;
   }
 
   /// Get from cache
@@ -91,7 +91,6 @@ class MangaParkParser extends ComicParser {
       final href = el.querySelector('a')?.attributes['href']?.trim() ?? '';
       if (href.isEmpty) continue;
 
-      // Extract tags to check for NSFW
       final tags = _extractTags(el, 'span.whitespace-nowrap');
       if (_hasNSFWContent(tags)) continue;
 
@@ -103,7 +102,6 @@ class MangaParkParser extends ComicParser {
       final ratingText =
           el.querySelector('span.text-yellow-500')?.text.trim() ?? '';
 
-      // Parse rating - convert from x/10 format
       String rating = '';
       if (ratingText.isNotEmpty) {
         final match = RegExp(r'[\d.]+').firstMatch(ratingText);
@@ -151,7 +149,6 @@ class MangaParkParser extends ComicParser {
   Future<List<ComicItem>> fetchPopular() async {
     const cacheKey = 'popular-1';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -161,7 +158,6 @@ class MangaParkParser extends ComicParser {
     final doc = await _fetchAndParse(url);
     final results = _parseComicItems(doc);
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -171,7 +167,6 @@ class MangaParkParser extends ComicParser {
   Future<List<ComicItem>> fetchRecommended() async {
     const cacheKey = 'recommended-1';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -181,7 +176,6 @@ class MangaParkParser extends ComicParser {
     final doc = await _fetchAndParse(url);
     final results = _parseComicItems(doc);
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -191,7 +185,6 @@ class MangaParkParser extends ComicParser {
   Future<List<ComicItem>> fetchNewest({int page = 1}) async {
     final cacheKey = 'newest-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -211,7 +204,6 @@ class MangaParkParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -221,7 +213,6 @@ class MangaParkParser extends ComicParser {
   Future<List<ComicItem>> fetchAll({int page = 1}) async {
     final cacheKey = 'all-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -240,7 +231,6 @@ class MangaParkParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -251,7 +241,6 @@ class MangaParkParser extends ComicParser {
     final encodedQuery = Uri.encodeComponent(query);
     final cacheKey = 'search-$encodedQuery';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -271,7 +260,6 @@ class MangaParkParser extends ComicParser {
       throw Exception('No results found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -281,7 +269,6 @@ class MangaParkParser extends ComicParser {
   Future<List<ComicItem>> fetchByGenre(String genre, {int page = 1}) async {
     final cacheKey = 'genre-$genre-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -300,7 +287,6 @@ class MangaParkParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -314,10 +300,8 @@ class MangaParkParser extends ComicParser {
     String? type,
     String? order,
   }) async {
-    // Build cache key from parameters
     final cacheKey = 'filtered-$page-$genre-$status-$type-$order';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -342,7 +326,6 @@ class MangaParkParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -444,7 +427,6 @@ class MangaParkParser extends ComicParser {
   }) async {
     final Map<String, List<ComicItem>> results = {};
 
-    // Limit concurrent requests
     for (var i = 0; i < genres.length; i += _maxConcurrentRequests) {
       final batch = genres.skip(i).take(_maxConcurrentRequests);
       final futures = batch.map((genre) async {
@@ -468,7 +450,6 @@ class MangaParkParser extends ComicParser {
       throw Exception('href is required');
     }
 
-    // Build URL
     String url = href;
     if (!href.startsWith('http')) {
       final cleanHref = href.startsWith('/') ? href : '/$href';
@@ -477,7 +458,6 @@ class MangaParkParser extends ComicParser {
 
     final doc = await _fetchAndParse(url);
 
-    // Extract title
     String title = doc.querySelector('h3.text-lg')?.text.trim() ?? '';
     if (title.isEmpty) {
       title = doc.querySelector('div[q\\:key="tz_6"] h3')?.text.trim() ?? '';
@@ -497,7 +477,6 @@ class MangaParkParser extends ComicParser {
       }
     }
 
-    // Thumbnail
     String thumbnail =
         doc
             .querySelector('div[q\\:key="17_2"] img')
@@ -512,7 +491,6 @@ class MangaParkParser extends ComicParser {
       thumbnail = '$_baseUrl$thumbnail';
     }
 
-    // Description
     final descParts = <String>[];
     for (final el in doc.querySelectorAll(
       'react-island div.limit-html div.limit-html-p',
@@ -524,7 +502,6 @@ class MangaParkParser extends ComicParser {
     }
     final description = descParts.join('\n');
 
-    // Status
     String status = '';
     for (final el in doc.querySelectorAll(
       'div[q\\:key="Yn_8"] span.font-bold',
@@ -533,7 +510,6 @@ class MangaParkParser extends ComicParser {
       if (status.isNotEmpty) break;
     }
 
-    // Author
     final authors = <String>[];
     final authorElements = doc.querySelectorAll('div[q\\:key="tz_4"] a');
     for (var i = 0; i < authorElements.length && i < 3; i++) {
@@ -544,7 +520,6 @@ class MangaParkParser extends ComicParser {
     }
     final author = authors.join(', ');
 
-    // Rating - Using Total Views
     String rating = '';
     for (final el in doc.querySelectorAll(
       'div[q\\:key="jN_2"] div.flex.flex-wrap span',
@@ -575,7 +550,6 @@ class MangaParkParser extends ComicParser {
       );
     }
 
-    // Type from first genre
     final type = genres.isNotEmpty ? genres.first.title : '';
 
     // Chapters
@@ -586,7 +560,6 @@ class MangaParkParser extends ComicParser {
       final chTitle = el.querySelector('a')?.text.trim() ?? '';
       final chHref = el.querySelector('a')?.attributes['href']?.trim() ?? '';
 
-      // Extract date from time element
       String chDate = '';
       final timeEl = el.querySelector('time span[data-passed]');
       if (timeEl != null) {
@@ -630,7 +603,6 @@ class MangaParkParser extends ComicParser {
       throw Exception('href is required');
     }
 
-    // Build URL
     String url = href;
     if (!href.startsWith('http')) {
       final cleanHref = href.startsWith('/') ? href : '/$href';
@@ -645,7 +617,6 @@ class MangaParkParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    // Extract title
     String title = doc.querySelector('h1')?.text.trim() ?? '';
     if (title.isEmpty) {
       title = doc.querySelector('h2')?.text.trim() ?? '';
@@ -654,7 +625,6 @@ class MangaParkParser extends ComicParser {
       title = doc.querySelector('h3')?.text.trim() ?? '';
     }
 
-    // Extract navigation
     String prev = '';
     String next = '';
 
@@ -674,7 +644,6 @@ class MangaParkParser extends ComicParser {
       }
     }
 
-    // Fallback for prev
     if (prev.isEmpty) {
       final prevFallback = doc.querySelectorAll('a.btn[q\\:key="0B_11"]');
       for (final el in prevFallback) {
@@ -717,7 +686,6 @@ class MangaParkParser extends ComicParser {
       }
     }
 
-    // Extract images from script tags
     final panels = <String>[];
     final seen = <String>{};
 

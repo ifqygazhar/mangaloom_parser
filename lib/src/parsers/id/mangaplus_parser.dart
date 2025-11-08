@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:mangaloom_parser/src/utils/cache.dart';
 import 'package:uuid/uuid.dart'; // tambahkan di pubspec.yaml: uuid: ^4.0.0
 import 'package:mangaloom_parser/mangaloom_parser.dart';
 
@@ -18,7 +19,6 @@ class MangaPlusParser extends ComicParser {
 
   // Cache untuk results dengan expiry time
   final Map<String, _CachedResult> _apiCache = {};
-  static const Duration _cacheExpiry = Duration(minutes: 5);
 
   // Limit hasil default
   static const int _defaultLimit = 10;
@@ -53,7 +53,7 @@ class MangaPlusParser extends ComicParser {
   bool _isCacheValid(String key) {
     final cached = _apiCache[key];
     if (cached == null) return false;
-    return DateTime.now().difference(cached.timestamp) < _cacheExpiry;
+    return DateTime.now().difference(cached.timestamp) < cacheExpiry;
   }
 
   /// Get from cache
@@ -75,11 +75,9 @@ class MangaPlusParser extends ComicParser {
     String endpoint, {
     bool useCache = true,
   }) async {
-    // Check cache first
     if (useCache) {
       final cached = _getFromCache(endpoint);
       if (cached != null && cached is Map<String, dynamic>) {
-        print('Using cached data for: $endpoint');
         return cached;
       }
     }
@@ -94,16 +92,8 @@ class MangaPlusParser extends ComicParser {
 
     final finalUri = uri.replace(queryParameters: queryParams);
 
-    print('Requesting: $finalUri');
-    print('Headers: ${_getHeaders()}');
-
     try {
       final response = await _client.get(finalUri, headers: _getHeaders());
-
-      print('Response status: ${response.statusCode}');
-      print(
-        'Response body (first 200 chars): ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}',
-      );
 
       if (response.statusCode != 200) {
         throw Exception('Failed to load data: ${response.statusCode}');
@@ -115,7 +105,6 @@ class MangaPlusParser extends ComicParser {
       if (json.containsKey('success')) {
         final result = json['success'] as Map<String, dynamic>;
 
-        // Save to cache
         if (useCache) {
           _saveToCache(endpoint, result);
         }
@@ -123,11 +112,8 @@ class MangaPlusParser extends ComicParser {
         return result;
       }
 
-      // Handle error - following Kotlin implementation EXACTLY
       if (json.containsKey('error')) {
         final error = json['error'] as Map<String, dynamic>;
-
-        print('Error response: $error');
 
         // Try to get error popups
         if (error.containsKey('popups')) {
@@ -142,9 +128,6 @@ class MangaPlusParser extends ComicParser {
             if (language == null) {
               final subject = popup['subject'] as String?;
               final body = popup['body'] as String?;
-
-              print('Error subject: $subject');
-              print('Error body: $body');
 
               // Special handling for manga_viewer Not Found
               if (subject == 'Not Found' && endpoint.contains('manga_viewer')) {
@@ -176,7 +159,6 @@ class MangaPlusParser extends ComicParser {
 
       throw Exception('Invalid API response');
     } catch (e) {
-      print('Exception during API call: $e');
       rethrow;
     }
   }
@@ -205,7 +187,6 @@ class MangaPlusParser extends ComicParser {
           .map((e) => e.trim())
           .join(', ');
 
-      // Filter by query if provided
       if (query != null && query.isNotEmpty) {
         if (!name.toLowerCase().contains(query.toLowerCase()) &&
             !author.toLowerCase().contains(query.toLowerCase())) {
@@ -251,7 +232,6 @@ class MangaPlusParser extends ComicParser {
             })
             .catchError((e) {
               results['popular'] = [];
-              print('Error fetching popular: $e');
             }),
       );
     }
@@ -264,7 +244,6 @@ class MangaPlusParser extends ComicParser {
             })
             .catchError((e) {
               results['recommended'] = [];
-              print('Error fetching recommended: $e');
             }),
       );
     }
@@ -277,7 +256,6 @@ class MangaPlusParser extends ComicParser {
             })
             .catchError((e) {
               results['newest'] = [];
-              print('Error fetching newest: $e');
             }),
       );
     }
@@ -328,7 +306,7 @@ class MangaPlusParser extends ComicParser {
     // Load cache if not exists or expired
     if (_allTitlesCache == null ||
         _allTitlesCacheTime == null ||
-        DateTime.now().difference(_allTitlesCacheTime!) >= _cacheExpiry) {
+        DateTime.now().difference(_allTitlesCacheTime!) >= cacheExpiry) {
       _allTitlesCache = await _apiCall('/title_list/allV2');
       _allTitlesCacheTime = DateTime.now();
     }
@@ -367,7 +345,7 @@ class MangaPlusParser extends ComicParser {
     // MangaPlus uses local search - use cached all titles
     if (_allTitlesCache == null ||
         _allTitlesCacheTime == null ||
-        DateTime.now().difference(_allTitlesCacheTime!) >= _cacheExpiry) {
+        DateTime.now().difference(_allTitlesCacheTime!) >= cacheExpiry) {
       _allTitlesCache = await _apiCall('/title_list/allV2');
       _allTitlesCacheTime = DateTime.now();
     }
@@ -434,7 +412,7 @@ class MangaPlusParser extends ComicParser {
     final title = titleDetailView['title'] as Map<String, dynamic>? ?? {};
 
     final name = title['name'] as String? ?? '';
-    final titleId = title['titleId']?.toString() ?? href;
+    // final titleId = title['titleId']?.toString() ?? href;
     final author = (title['author'] as String? ?? '')
         .split('/')
         .map((e) => e.trim())
@@ -442,7 +420,6 @@ class MangaPlusParser extends ComicParser {
     final thumbnail = title['portraitImageUrl'] as String? ?? '';
     final overview = titleDetailView['overview'] as String? ?? '';
 
-    // Status
     final titleLabels =
         titleDetailView['titleLabels'] as Map<String, dynamic>? ?? {};
     final releaseSchedule = titleLabels['releaseSchedule'] as String? ?? '';
@@ -462,7 +439,6 @@ class MangaPlusParser extends ComicParser {
       status = 'Ongoing';
     }
 
-    // Description with viewing period
     final viewingPeriod =
         titleDetailView['viewingPeriodDescription'] as String? ?? '';
     String description = overview;
@@ -470,7 +446,6 @@ class MangaPlusParser extends ComicParser {
       description += '\n\n$viewingPeriod';
     }
 
-    // Parse chapters
     final chapterListGroup =
         titleDetailView['chapterListGroup'] as List<dynamic>? ?? [];
     final chapters = _parseChapters(
@@ -534,7 +509,7 @@ class MangaPlusParser extends ComicParser {
 
       if (chapterId.isEmpty || subtitle.isEmpty) continue;
 
-      final chapterName = chapter['name'] as String? ?? '';
+      // final chapterName = chapter['name'] as String? ?? '';
       final timestamp = chapter['startTimeStamp'] as int? ?? 0;
       final date = timestamp > 0
           ? DateTime.fromMillisecondsSinceEpoch(
@@ -577,7 +552,6 @@ class MangaPlusParser extends ComicParser {
 
       if (imageUrl.isEmpty) continue;
 
-      // Add encryption key as fragment if exists
       final fullUrl = encryptionKey.isEmpty
           ? imageUrl
           : '$imageUrl#$encryptionKey';
@@ -599,7 +573,6 @@ class MangaPlusParser extends ComicParser {
     }
 
     try {
-      // Parse hex key into byte array
       final keyBytes = <int>[];
       for (int i = 0; i < encryptionKey.length; i += 2) {
         final hexByte = encryptionKey.substring(i, i + 2);

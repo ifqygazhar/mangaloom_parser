@@ -4,6 +4,7 @@ import 'package:html/dom.dart';
 import 'package:http/http.dart' as http;
 import 'package:mangaloom_parser/mangaloom_parser.dart';
 import 'package:mangaloom_parser/src/models/cached_result.dart';
+import 'package:mangaloom_parser/src/utils/cache.dart';
 
 class KomikluParser extends ComicParser {
   static const String _baseUrl = 'https://v2.komiklu.com';
@@ -12,7 +13,6 @@ class KomikluParser extends ComicParser {
 
   // Cache untuk list results dengan expiry time
   final Map<String, CachedResult> _listCache = {};
-  static const Duration _cacheExpiry = Duration(minutes: 5);
 
   // Limit concurrent requests untuk batch operations
   static const int _maxConcurrentRequests = 3;
@@ -67,7 +67,7 @@ class KomikluParser extends ComicParser {
   bool _isCacheValid(String key) {
     final cached = _listCache[key];
     if (cached == null) return false;
-    return DateTime.now().difference(cached.timestamp) < _cacheExpiry;
+    return DateTime.now().difference(cached.timestamp) < cacheExpiry;
   }
 
   /// Get from cache
@@ -95,7 +95,6 @@ class KomikluParser extends ComicParser {
     if (url.startsWith('/')) {
       return '$baseUrl$url';
     }
-    // Handle case without leading slash (e.g., "comic_detail.php?title=X")
     return '$baseUrl/$url';
   }
 
@@ -126,28 +125,22 @@ class KomikluParser extends ComicParser {
 
     for (final article in articles) {
       try {
-        // Title from h4 > a
         final title = article.querySelector('h4 a')?.text.trim() ?? '';
         if (title.isEmpty) continue;
 
-        // Href from h4 > a
         var href = article.querySelector('h4 a')?.attributes['href'] ?? '';
         if (href.isEmpty) continue;
 
-        // Clean and normalize href (keep query string, normalize slashes)
         href = _toRelativeUrl(href);
 
-        // Thumbnail from article > a > img
         var thumbnail = article.querySelector('a img')?.attributes['src'] ?? '';
         if (thumbnail.isNotEmpty) {
           thumbnail = _toAbsoluteUrl(thumbnail);
         }
 
-        // Chapter from div.text-sky-400
         final chapter =
             article.querySelector('div.text-sky-400')?.text.trim() ?? '';
 
-        // Rating from div.text-yellow-400 (remove star emoji)
         var rating =
             article.querySelector('div.text-yellow-400')?.text.trim() ?? '';
         rating = rating.replaceAll('⭐', '').trim();
@@ -183,24 +176,19 @@ class KomikluParser extends ComicParser {
 
     for (final article in articles) {
       try {
-        // Title from h4 > a
         final title = article.querySelector('h4 a')?.text.trim() ?? '';
         if (title.isEmpty) continue;
 
-        // Href from h4 > a
         var href = article.querySelector('h4 a')?.attributes['href'] ?? '';
         if (href.isEmpty) continue;
 
-        // Clean and normalize href (keep query string, normalize slashes)
         href = _toRelativeUrl(href);
 
-        // Thumbnail from article > a > img
         var thumbnail = article.querySelector('a img')?.attributes['src'] ?? '';
         if (thumbnail.isNotEmpty) {
           thumbnail = _toAbsoluteUrl(thumbnail);
         }
 
-        // Chapter - only get chapter info, not update date
         String chapter = '';
         final chapterDivs = article.querySelectorAll(
           'div.flex.justify-between div.text-sky-400',
@@ -213,7 +201,6 @@ class KomikluParser extends ComicParser {
           }
         }
 
-        // Rating from div.text-yellow-400 (remove star emoji)
         var rating =
             article.querySelector('div.text-yellow-400')?.text.trim() ?? '';
         rating = rating.replaceAll('⭐', '').trim();
@@ -240,7 +227,6 @@ class KomikluParser extends ComicParser {
   Future<List<ComicItem>> fetchPopular() async {
     const cacheKey = 'popular-1';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -256,7 +242,6 @@ class KomikluParser extends ComicParser {
     final doc = html_parser.parse(response.body);
     final results = _parseComicListFromArticles(doc);
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -266,7 +251,6 @@ class KomikluParser extends ComicParser {
   Future<List<ComicItem>> fetchRecommended() async {
     const cacheKey = 'recommended-1';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -282,7 +266,6 @@ class KomikluParser extends ComicParser {
     final doc = html_parser.parse(response.body);
     final results = _parseComicListFromArticles(doc);
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -292,7 +275,6 @@ class KomikluParser extends ComicParser {
   Future<List<ComicItem>> fetchNewest({int page = 1}) async {
     final cacheKey = 'newest-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -313,7 +295,6 @@ class KomikluParser extends ComicParser {
       throw Exception('No results found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -323,7 +304,6 @@ class KomikluParser extends ComicParser {
   Future<List<ComicItem>> fetchAll({int page = 1}) async {
     final cacheKey = 'all-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -343,7 +323,6 @@ class KomikluParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -354,7 +333,6 @@ class KomikluParser extends ComicParser {
     final encodedQuery = Uri.encodeComponent(query);
     final cacheKey = 'search-$encodedQuery';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -367,7 +345,6 @@ class KomikluParser extends ComicParser {
       throw Exception('Failed to search: ${response.statusCode}');
     }
 
-    // Parse JSON response
     try {
       final List<dynamic> jsonResults = jsonDecode(response.body);
       final items = <ComicItem>[];
@@ -376,7 +353,6 @@ class KomikluParser extends ComicParser {
         final title = result['title']?.toString() ?? '';
         if (title.isEmpty) continue;
 
-        // Build href in format /comic_detail.php?title=X (no trailing slash)
         var href = '/comic_detail.php?title=$title';
 
         // Cover/thumbnail
@@ -385,13 +361,11 @@ class KomikluParser extends ComicParser {
           thumbnail = _toAbsoluteUrl(thumbnail);
         }
 
-        // Rating
         var rating = result['rating']?.toString() ?? '';
         if (rating.isNotEmpty && !rating.contains('/')) {
           rating = '$rating/10';
         }
 
-        // Year (used in type field since search doesn't return chapter)
         final year = result['year']?.toString() ?? '';
 
         items.add(
@@ -410,7 +384,6 @@ class KomikluParser extends ComicParser {
         throw Exception('No results found');
       }
 
-      // Save to cache
       _saveToCache(cacheKey, items);
 
       return items;
@@ -423,7 +396,6 @@ class KomikluParser extends ComicParser {
   Future<List<ComicItem>> fetchByGenre(String genre, {int page = 1}) async {
     final cacheKey = 'genre-$genre-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -445,7 +417,6 @@ class KomikluParser extends ComicParser {
       throw Exception('No results found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -459,10 +430,8 @@ class KomikluParser extends ComicParser {
     String? type,
     String? order,
   }) async {
-    // Build cache key from parameters
     final cacheKey = 'filtered-$page-$genre-$status-$type-$order';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -471,14 +440,12 @@ class KomikluParser extends ComicParser {
     // Build URL based on filter type
     String url;
     if (genre != null && genre.isNotEmpty) {
-      // Filter by genre
       url =
           '$baseUrl/ajax_filter.php?filterGenre=$genre&yearTo=9999&sort=newest';
     } else if (order == 'rating-desc' || order == 'popular') {
       // Popular filter
       url = '$baseUrl/ajax_filter.php?yearTo=9999&sort=rating-desc';
     } else {
-      // Default to recommended (newest)
       url = '$baseUrl/ajax_filter.php?yearTo=9999&sort=newest';
     }
 
@@ -495,7 +462,6 @@ class KomikluParser extends ComicParser {
       throw Exception('No results found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -554,7 +520,6 @@ class KomikluParser extends ComicParser {
   }) async {
     final Map<String, List<ComicItem>> results = {};
 
-    // Limit concurrent requests
     for (var i = 0; i < genres.length; i += _maxConcurrentRequests) {
       final batch = genres.skip(i).take(_maxConcurrentRequests);
       final futures = batch.map((genre) async {
@@ -587,7 +552,6 @@ class KomikluParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    // Title from h1.text-3xl.font-bold
     var title = doc.querySelector('h1.text-3xl.font-bold')?.text.trim() ?? '';
     if (title.isEmpty) {
       title = doc.querySelector('h1')?.text.trim() ?? '';
@@ -597,7 +561,6 @@ class KomikluParser extends ComicParser {
       throw Exception('Comic not found');
     }
 
-    // Thumbnail
     var thumbnail =
         doc
             .querySelector('img.w-56.h-80.object-cover.rounded-lg.shadow-lg')
@@ -611,20 +574,16 @@ class KomikluParser extends ComicParser {
       thumbnail = _toAbsoluteUrl(thumbnail);
     }
 
-    // Author
     final author =
         doc.querySelector('span.text-sky-400.font-medium')?.text.trim() ?? '';
 
-    // Rating
     var rating =
         doc.querySelector('span.ml-2.text-sm.text-gray-400')?.text.trim() ?? '';
     rating = rating.replaceAll('(', '').replaceAll(')', '').trim();
 
-    // Description
     final description =
         doc.querySelector('p.text-gray-300.leading-relaxed')?.text.trim() ?? '';
 
-    // Year and Status - more robust parsing
     String year = '';
     String status = '';
 
@@ -648,7 +607,6 @@ class KomikluParser extends ComicParser {
       }
     }
 
-    // Extract genres
     final genres = <Genre>[];
     final genreElements = doc.querySelectorAll(
       'div.flex.flex-wrap.gap-2 span.bg-gray-800.text-gray-200.text-sm',
@@ -661,7 +619,6 @@ class KomikluParser extends ComicParser {
       }
     }
 
-    // Extract chapters
     final chapters = <Chapter>[];
     final chapterElements = doc.querySelectorAll(
       'ul#chapterContainer li.chapter-item',
@@ -711,7 +668,6 @@ class KomikluParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    // Title from h1.text-2xl.font-bold
     final title = doc.querySelector('h1.text-2xl.font-bold')?.text.trim() ?? '';
 
     if (title.isEmpty) {
@@ -728,7 +684,6 @@ class KomikluParser extends ComicParser {
         final prevHref = link.attributes['href'] ?? '';
         if (prevHref.isNotEmpty && prevHref != '#') {
           prev = _toRelativeUrl(prevHref);
-          // Clean path
           if (prev.isEmpty || prev == '/') {
             prev = '';
           }
@@ -745,7 +700,6 @@ class KomikluParser extends ComicParser {
         final nextHref = link.attributes['href'] ?? '';
         if (nextHref.isNotEmpty && nextHref != '#') {
           next = _toRelativeUrl(nextHref);
-          // Clean path
           if (next.isEmpty || next == '/') {
             next = '';
           }
@@ -754,7 +708,6 @@ class KomikluParser extends ComicParser {
       }
     }
 
-    // Extract images from div#viewer img.webtoon-img
     final images = <String>[];
     final imageElements = doc.querySelectorAll('div#viewer img.webtoon-img');
     for (final img in imageElements) {

@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:mangaloom_parser/mangaloom_parser.dart';
 import 'package:mangaloom_parser/src/models/cached_result.dart';
 import 'package:flutter_js/flutter_js.dart';
+import 'package:mangaloom_parser/src/utils/cache.dart';
 
 final jsRuntime = getJavascriptRuntime();
 
@@ -16,11 +17,8 @@ class BatotoParser extends ComicParser {
 
   final http.Client _client;
 
-  // Cache untuk list results dengan expiry time
   final Map<String, CachedResult> _listCache = {};
-  static const Duration _cacheExpiry = Duration(minutes: 5);
 
-  // Limit concurrent requests untuk batch operations
   static const int _maxConcurrentRequests = 3;
 
   BatotoParser({http.Client? client}) : _client = client ?? http.Client();
@@ -48,7 +46,7 @@ class BatotoParser extends ComicParser {
   bool _isCacheValid(String key) {
     final cached = _listCache[key];
     if (cached == null) return false;
-    return DateTime.now().difference(cached.timestamp) < _cacheExpiry;
+    return DateTime.now().difference(cached.timestamp) < cacheExpiry;
   }
 
   /// Get from cache
@@ -183,7 +181,6 @@ class BatotoParser extends ComicParser {
             div.querySelector('img[src]')?.attributes['src'] ?? '';
         final altTitle = div.querySelector('.item-alias')?.text.trim() ?? '';
 
-        // Extract flag code from data-lang attribute
         final flagElement = div.querySelector('em.item-flag[data-lang]');
         if (flagElement != null) {
           final flagCode =
@@ -228,7 +225,6 @@ class BatotoParser extends ComicParser {
 
       // Jika text berisi "..." berarti ini halaman pertama yang menampilkan "1 ..."
       if (lastActivePage.contains('...')) {
-        // Extract number before "..."
         final pageNum =
             int.tryParse(lastActivePage.split('...').first.trim()) ?? 1;
         return pageNum == page;
@@ -250,7 +246,6 @@ class BatotoParser extends ComicParser {
   Future<List<ComicItem>> fetchPopular() async {
     const cacheKey = 'popular-1';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -266,7 +261,6 @@ class BatotoParser extends ComicParser {
     final doc = html_parser.parse(response.body);
     final results = _parseComicList(doc);
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -276,7 +270,6 @@ class BatotoParser extends ComicParser {
   Future<List<ComicItem>> fetchRecommended() async {
     const cacheKey = 'recommended-1';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -292,7 +285,6 @@ class BatotoParser extends ComicParser {
     final doc = html_parser.parse(response.body);
     final results = _parseComicList(doc);
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -302,7 +294,6 @@ class BatotoParser extends ComicParser {
   Future<List<ComicItem>> fetchNewest({int page = 1}) async {
     final cacheKey = 'newest-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -317,7 +308,6 @@ class BatotoParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    // Parse comic list first
     final items = _parseComicList(doc);
 
     // Jika tidak ada items, throw exception
@@ -330,14 +320,12 @@ class BatotoParser extends ComicParser {
       // Jika validation gagal tapi ada items, kembalikan items
       // (ini untuk handle edge case di halaman 1)
       if (items.isNotEmpty) {
-        // Save to cache
         _saveToCache(cacheKey, items);
         return items;
       }
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -347,7 +335,6 @@ class BatotoParser extends ComicParser {
   Future<List<ComicItem>> fetchAll({int page = 1}) async {
     final cacheKey = 'all-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -362,7 +349,6 @@ class BatotoParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    // Parse comic list first
     final items = _parseComicList(doc);
 
     // Jika tidak ada items, throw exception
@@ -375,14 +361,12 @@ class BatotoParser extends ComicParser {
       // Jika validation gagal tapi ada items, kembalikan items
       // (ini untuk handle edge case di halaman 1)
       if (items.isNotEmpty) {
-        // Save to cache
         _saveToCache(cacheKey, items);
         return items;
       }
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -393,7 +377,6 @@ class BatotoParser extends ComicParser {
     final encodedQuery = Uri.encodeComponent(query);
     final cacheKey = 'search-$encodedQuery';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -418,7 +401,6 @@ class BatotoParser extends ComicParser {
       throw Exception('No results found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -428,7 +410,6 @@ class BatotoParser extends ComicParser {
   Future<List<ComicItem>> fetchByGenre(String genre, {int page = 1}) async {
     final cacheKey = 'genre-$genre-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -443,7 +424,6 @@ class BatotoParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    // Parse comic list first
     final items = _parseComicList(doc);
 
     // Jika tidak ada items, throw exception
@@ -455,14 +435,12 @@ class BatotoParser extends ComicParser {
     if (!_hasResults(doc, page)) {
       // Jika validation gagal tapi ada items, kembalikan items
       if (items.isNotEmpty) {
-        // Save to cache
         _saveToCache(cacheKey, items);
         return items;
       }
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -476,10 +454,8 @@ class BatotoParser extends ComicParser {
     String? type,
     String? order,
   }) async {
-    // Build cache key from parameters
     final cacheKey = 'filtered-$page-$genre-$status-$type-$order';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -500,7 +476,6 @@ class BatotoParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    // Parse comic list first
     final items = _parseComicList(doc);
 
     // Jika tidak ada items, throw exception
@@ -512,14 +487,12 @@ class BatotoParser extends ComicParser {
     if (!_hasResults(doc, page)) {
       // Jika validation gagal tapi ada items, kembalikan items
       if (items.isNotEmpty) {
-        // Save to cache
         _saveToCache(cacheKey, items);
         return items;
       }
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -571,10 +544,8 @@ class BatotoParser extends ComicParser {
       if (endIndex == -1) continue;
 
       try {
-        // Extract the genres object
         final genresJson = scriptText.substring(startIndex, endIndex);
 
-        // Parse JSON
         final json = jsonDecode(genresJson) as Map<String, dynamic>;
 
         // Iterate through all genres
@@ -656,7 +627,6 @@ class BatotoParser extends ComicParser {
   }) async {
     final Map<String, List<ComicItem>> results = {};
 
-    // Limit concurrent requests
     for (var i = 0; i < genres.length; i += _maxConcurrentRequests) {
       final batch = genres.skip(i).take(_maxConcurrentRequests);
       final futures = batch.map((genre) async {
@@ -711,13 +681,10 @@ class BatotoParser extends ComicParser {
       throw Exception('Comic details not found');
     }
 
-    // Extract title
     final title = root.querySelector('h3.item-title')?.text.trim() ?? '';
 
-    // Extract cover
     final coverUrl = details.querySelector('img[src]')?.attributes['src'] ?? '';
 
-    // Extract description
     final descriptionElement = details.querySelector(
       '#limit-height-body-summary',
     );
@@ -727,7 +694,6 @@ class BatotoParser extends ComicParser {
         .trim();
     final description = descriptionHtml ?? '';
 
-    // Extract attributes
     final attrs =
         details.querySelector('.attr-main')?.querySelectorAll('.attr-item') ??
         [];
@@ -740,10 +706,8 @@ class BatotoParser extends ComicParser {
       }
     }
 
-    // Extract author
     final author = attrMap['Authors:']?.text.trim() ?? '';
 
-    // Extract status
     final statusText = attrMap['Original work:']?.text.trim() ?? '';
     String status = '';
     switch (statusText) {
@@ -763,7 +727,6 @@ class BatotoParser extends ComicParser {
         status = statusText;
     }
 
-    // Extract genres
     final genres = <Genre>[];
     final genreElements = attrMap['Genres:']?.querySelectorAll('span') ?? [];
     for (final el in genreElements) {
@@ -778,7 +741,6 @@ class BatotoParser extends ComicParser {
       }
     }
 
-    // Extract chapters
     final chapters = <Chapter>[];
     final episodeList = root
         .querySelector('.episode-list')
@@ -843,7 +805,6 @@ class BatotoParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    // Extract title
     final title = doc.querySelector('title')?.text.trim() ?? '';
 
     // Extract navigation - FIXED: menggunakan selector yang lebih spesifik dari HTML
@@ -885,7 +846,6 @@ class BatotoParser extends ComicParser {
       }
     }
 
-    // Fallback: cari dari navigation containers
     if (prev.isEmpty || next.isEmpty) {
       final navContainers = doc.querySelectorAll('.episode-nav');
       for (final nav in navContainers) {
@@ -909,7 +869,6 @@ class BatotoParser extends ComicParser {
       }
     }
 
-    // Extract images using AES decryption
     final scripts = doc.querySelectorAll('script');
     List<String> panels = [];
 
@@ -925,17 +884,14 @@ class BatotoParser extends ComicParser {
       if (startIndex == -1 || endIndex == -1) continue;
 
       try {
-        // Extract image array
         final imagesJson = scriptText.substring(startIndex, endIndex);
         final images = jsonDecode(imagesJson) as List;
 
-        // Extract batoPass (can be obfuscated JS or quoted string)
         final batoPassMatch = RegExp(
           r'const batoPass\s*=\s*([^;]+);',
           dotAll: true,
         ).firstMatch(scriptText);
 
-        // Extract batoWord (always a quoted string)
         final batoWordMatch = RegExp(
           r'const batoWord\s*=\s*"([^"]+)"',
         ).firstMatch(scriptText);
@@ -953,7 +909,6 @@ class BatotoParser extends ComicParser {
         final decrypted = _decryptAES(batoWord, password);
         final args = jsonDecode(decrypted) as List;
 
-        // Build image URLs
         for (var i = 0; i < images.length; i++) {
           final url = images[i] as String;
           final imageUrl = args.isNotEmpty && i < args.length
@@ -981,7 +936,6 @@ class BatotoParser extends ComicParser {
       // Decode base64
       final cipherData = base64.decode(encryptedBase64);
 
-      // Extract salt (bytes 8-16)
       final saltData = cipherData.sublist(8, 16);
 
       // Generate key and IV
@@ -992,7 +946,6 @@ class BatotoParser extends ComicParser {
         password: utf8.encode(password),
       );
 
-      // Extract encrypted data (from byte 16 onwards)
       final encryptedData = cipherData.sublist(16);
 
       // Decrypt

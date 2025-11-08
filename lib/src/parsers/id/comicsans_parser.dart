@@ -3,6 +3,7 @@ import 'package:html/dom.dart';
 import 'package:http/http.dart' as http;
 import 'package:mangaloom_parser/mangaloom_parser.dart';
 import 'package:mangaloom_parser/src/models/cached_result.dart';
+import 'package:mangaloom_parser/src/utils/cache.dart';
 
 class ComicSansParser extends ComicParser {
   static const String _baseUrl = 'https://lc3.cosmicscans.asia';
@@ -12,7 +13,6 @@ class ComicSansParser extends ComicParser {
 
   // Cache untuk list results dengan expiry time
   final Map<String, CachedResult> _listCache = {};
-  static const Duration _cacheExpiry = Duration(minutes: 5);
 
   // Limit concurrent requests untuk batch operations
   static const int _maxConcurrentRequests = 3;
@@ -32,7 +32,7 @@ class ComicSansParser extends ComicParser {
   bool _isCacheValid(String key) {
     final cached = _listCache[key];
     if (cached == null) return false;
-    return DateTime.now().difference(cached.timestamp) < _cacheExpiry;
+    return DateTime.now().difference(cached.timestamp) < cacheExpiry;
   }
 
   /// Get from cache
@@ -112,7 +112,6 @@ class ComicSansParser extends ComicParser {
   Future<List<ComicItem>> fetchPopular() async {
     const cacheKey = 'popular-1';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -122,7 +121,6 @@ class ComicSansParser extends ComicParser {
     final doc = await _fetchAndParse(url);
     final results = _parseComicItems(doc, _mangaPrefix);
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -132,7 +130,6 @@ class ComicSansParser extends ComicParser {
   Future<List<ComicItem>> fetchRecommended() async {
     const cacheKey = 'recommended-1';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -142,7 +139,6 @@ class ComicSansParser extends ComicParser {
     final doc = await _fetchAndParse(url);
     final results = _parseComicItems(doc, _mangaPrefix);
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -152,7 +148,6 @@ class ComicSansParser extends ComicParser {
   Future<List<ComicItem>> fetchNewest({int page = 1}) async {
     final cacheKey = 'newest-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -172,7 +167,6 @@ class ComicSansParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -182,7 +176,6 @@ class ComicSansParser extends ComicParser {
   Future<List<ComicItem>> fetchAll({int page = 1}) async {
     final cacheKey = 'all-$page';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -201,7 +194,6 @@ class ComicSansParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -212,7 +204,6 @@ class ComicSansParser extends ComicParser {
     final encodedQuery = Uri.encodeComponent(query);
     final cacheKey = 'search-$encodedQuery';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -232,7 +223,6 @@ class ComicSansParser extends ComicParser {
       throw Exception('No results found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -251,10 +241,8 @@ class ComicSansParser extends ComicParser {
     String? type,
     String? order,
   }) async {
-    // Build cache key from parameters
     final cacheKey = 'filtered-$page-$genre-$status-$type-$order';
 
-    // Check cache first
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -279,7 +267,6 @@ class ComicSansParser extends ComicParser {
       throw Exception('Page not found');
     }
 
-    // Save to cache
     _saveToCache(cacheKey, items);
 
     return items;
@@ -358,7 +345,6 @@ class ComicSansParser extends ComicParser {
   }) async {
     final Map<String, List<ComicItem>> results = {};
 
-    // Limit concurrent requests
     for (var i = 0; i < genres.length; i += _maxConcurrentRequests) {
       final batch = genres.skip(i).take(_maxConcurrentRequests);
       final futures = batch.map((genre) async {
@@ -390,7 +376,6 @@ class ComicSansParser extends ComicParser {
       throw Exception('Comic not found');
     }
 
-    // Extract basic info
     final title = article.querySelector('h1.entry-title')?.text.trim() ?? '';
 
     // Alternative title - find the b tag containing "Alternative Titles"
@@ -412,7 +397,6 @@ class ComicSansParser extends ComicParser {
     final description =
         article.querySelector('.entry-content-single')?.text.trim() ?? '';
 
-    // Status - find .imptdt that contains "Status" text
     String status = '';
     for (final imptdt in article.querySelectorAll('.tsinfo .imptdt')) {
       if (imptdt.text.contains('Status')) {
@@ -421,7 +405,6 @@ class ComicSansParser extends ComicParser {
       }
     }
 
-    // Type - find .imptdt that contains "Type" text
     String type = '';
     for (final imptdt in article.querySelectorAll('.tsinfo .imptdt')) {
       if (imptdt.text.contains('Type')) {
@@ -439,7 +422,6 @@ class ComicSansParser extends ComicParser {
       }
     }
 
-    // Author - find .fmed that contains "Author" text
     String author = '';
     for (final fmed in article.querySelectorAll('.fmed')) {
       if (fmed.text.contains('Author')) {
@@ -473,7 +455,6 @@ class ComicSansParser extends ComicParser {
       rating = article.querySelector('.rating-prc .num')?.text.trim() ?? '';
     }
 
-    // Extract genres
     final genres = <Genre>[];
 
     // Find the .wd-full div that contains "Genres"
@@ -509,7 +490,6 @@ class ComicSansParser extends ComicParser {
       }
     }
 
-    // Extract chapters
     final chapters = <Chapter>[];
     final chapterElements = article.querySelectorAll('.eplister ul.clstyle li');
 
@@ -564,7 +544,6 @@ class ComicSansParser extends ComicParser {
     final doc = html_parser.parse(response.body);
     final body = response.body;
 
-    // Extract title
     final title = doc.querySelector('h1.entry-title')?.text.trim() ?? '';
 
     // Extract panels from multiple sources
@@ -675,7 +654,6 @@ class ComicSansParser extends ComicParser {
       );
     }
 
-    // Fallback navigation from HTML
     if (prev.isEmpty) {
       final prevHref =
           doc

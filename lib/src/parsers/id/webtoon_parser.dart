@@ -4,6 +4,7 @@ import 'package:html/dom.dart';
 import 'package:http/http.dart' as http;
 import 'package:mangaloom_parser/mangaloom_parser.dart';
 import 'package:mangaloom_parser/src/models/cached_result.dart';
+import 'package:mangaloom_parser/src/utils/cache.dart';
 
 class WebtoonParser extends ComicParser {
   static const String _mobileApiDomain = 'm.webtoons.com';
@@ -17,7 +18,6 @@ class WebtoonParser extends ComicParser {
 
   // NEW: Cache untuk list results dengan expiry time
   final Map<String, CachedResult> _listCache = {};
-  static const Duration _cacheExpiry = Duration(minutes: 5);
 
   // NEW: Limit hasil default untuk performa lebih baik
   static const int _defaultPageSize = 10;
@@ -95,7 +95,7 @@ class WebtoonParser extends ComicParser {
   bool _isCacheValid(String key) {
     final cached = _listCache[key];
     if (cached == null) return false;
-    return DateTime.now().difference(cached.timestamp) < _cacheExpiry;
+    return DateTime.now().difference(cached.timestamp) < cacheExpiry;
   }
 
   /// NEW: Get from cache
@@ -117,11 +117,9 @@ class WebtoonParser extends ComicParser {
     final href = element.attributes['href'] ?? '';
     final titleNo = _extractTitleNo(href);
 
-    // Get title - optimized selector
     final title =
         element.querySelector('.title, .card_title')?.text.trim() ?? '';
 
-    // Get thumbnail - optimized to get src directly
     final thumbnailUrl = element.querySelector('img')?.attributes['src'] ?? '';
 
     return ComicItem(
@@ -152,7 +150,6 @@ class WebtoonParser extends ComicParser {
     int page = 1,
     int limit = _defaultPageSize,
   }) async {
-    // Check cache first
     final cacheKey = '$rankingType-$page-$limit';
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
@@ -183,7 +180,6 @@ class WebtoonParser extends ComicParser {
         .take(limit)
         .toList();
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -236,7 +232,6 @@ class WebtoonParser extends ComicParser {
   }) async {
     final Map<String, List<ComicItem>> results = {};
 
-    // Limit concurrent requests
     for (var i = 0; i < genres.length; i += _maxConcurrentRequests) {
       final batch = genres.skip(i).take(_maxConcurrentRequests);
       final futures = batch.map((genre) async {
@@ -287,7 +282,6 @@ class WebtoonParser extends ComicParser {
     final encodedQuery = Uri.encodeComponent(query);
     final cacheKey = 'search-$encodedQuery';
 
-    // Check cache
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
       return cached;
@@ -311,7 +305,6 @@ class WebtoonParser extends ComicParser {
 
     final results = elements.map((e) => _createMangaFromElement(e)).toList();
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -323,7 +316,6 @@ class WebtoonParser extends ComicParser {
     int page = 1,
     int limit = _defaultPageSize,
   }) async {
-    // Check cache first
     final cacheKey = 'genre-$genre-$page-$limit';
     final cached = _getFromCache(cacheKey);
     if (cached != null) {
@@ -364,7 +356,6 @@ class WebtoonParser extends ComicParser {
         .take(limit)
         .toList();
 
-    // Save to cache
     _saveToCache(cacheKey, results);
 
     return results;
@@ -419,7 +410,6 @@ class WebtoonParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    // Extract title
     String title =
         doc.querySelector('meta[property="og:title"]')?.attributes['content'] ??
         '';
@@ -427,7 +417,6 @@ class WebtoonParser extends ComicParser {
       title = doc.querySelector('h1.subj, h3.subj')?.text.trim() ?? '';
     }
 
-    // Extract description
     String description =
         doc
             .querySelector('meta[property="og:description"]')
@@ -442,7 +431,6 @@ class WebtoonParser extends ComicParser {
           doc.querySelector('.detail_header .summary')?.text.trim() ?? '';
     }
 
-    // Extract cover
     String coverUrl =
         doc.querySelector('meta[property="og:image"]')?.attributes['content'] ??
         '';
@@ -450,7 +438,6 @@ class WebtoonParser extends ComicParser {
       coverUrl = _toAbsoluteUrl(coverUrl, _staticDomain);
     }
 
-    // Extract author
     String author =
         doc
             .querySelector('meta[property="com-linewebtoon:webtoon:author"]')
@@ -464,7 +451,6 @@ class WebtoonParser extends ComicParser {
       author = doc.querySelector('.author_area')?.text.trim() ?? '';
     }
 
-    // Extract genres
     final genreElements = doc.querySelectorAll('.detail_header .info .genre');
     final genreElementsAlt = genreElements.isEmpty
         ? doc.querySelectorAll('h2.genre')
@@ -477,7 +463,6 @@ class WebtoonParser extends ComicParser {
       );
     }).toList();
 
-    // Extract status
     String status = 'Unknown';
     final dayInfo =
         doc.querySelector('#_asideDetail p.day_info')?.text.trim() ??
@@ -577,7 +562,6 @@ class WebtoonParser extends ComicParser {
       throw Exception('href is required');
     }
 
-    // Parse href to get titleNo and episodeNo
     final parts = href.split('/').where((s) => s.isNotEmpty).toList();
     if (parts.length < 2) {
       throw Exception('Invalid chapter href format');
@@ -586,7 +570,6 @@ class WebtoonParser extends ComicParser {
     final titleNo = int.parse(parts[0]);
     final episodeNo = int.parse(parts[1]);
 
-    // Get viewer URL from cache or construct it
     String viewerUrl = _viewerLinkCache[href] ?? '';
 
     if (viewerUrl.isEmpty) {
@@ -612,12 +595,10 @@ class WebtoonParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    // Extract title
     final title =
         doc.querySelector('meta[property="og:title"]')?.attributes['content'] ??
         'Episode $episodeNo';
 
-    // Extract images (OPTIMIZED: single query with multiple selectors)
     List<String> panels = [];
 
     // Try multiple selectors in priority order
@@ -673,7 +654,6 @@ class WebtoonParser extends ComicParser {
       }
     }
 
-    // Fallback: calculate prev/next based on episode number
     if (prev.isEmpty && episodeNo > 1) {
       prev = '/$titleNo/${episodeNo - 1}/';
     }
