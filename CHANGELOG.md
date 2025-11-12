@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2025-11-12
+
+### Fixed
+
+- 🐛 **KomikluParser Image Loading** - Fixed "No images found in chapter" error
+  - Added support for lazy loading images using `data-src` attribute
+  - Parser now checks `data-src` first, then falls back to `src` attribute
+  - Resolves issue with Komiklu's IntersectionObserver-based lazy loading
+  - Chapter images now load correctly from `div#viewer img.webtoon-img`
+
+### Technical Details
+
+- 🔧 Enhanced image selector to handle both lazy loading and direct loading scenarios
+- 📸 Image extraction priority: `data-src` → `src` → skip if empty
+- 🎯 Compatible with Komiklu's progressive image loading implementation
+
 ## [0.1.0] - 2025-11-03
 
 ### Added
