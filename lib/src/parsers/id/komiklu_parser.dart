@@ -711,7 +711,8 @@ class KomikluParser extends ComicParser {
     final images = <String>[];
     final imageElements = doc.querySelectorAll('div#viewer img.webtoon-img');
     for (final img in imageElements) {
-      final src = img.attributes['src'] ?? '';
+      // Try data-src first (for lazy loading), then fallback to src
+      var src = img.attributes['data-src'] ?? img.attributes['src'] ?? '';
       if (src.isNotEmpty) {
         images.add(src);
       }
