@@ -479,7 +479,7 @@ class WebtoonParser extends ComicParser {
     }
 
     // Fetch episodes/chapters
-    final chapters = await _fetchEpisodes(titleNo);
+    final chapters = await _fetchEpisodes(titleNo, title);
     final reversedChapters = chapters.reversed.toList();
 
     return ComicDetail(
@@ -503,7 +503,7 @@ class WebtoonParser extends ComicParser {
   }
 
   /// Fetch episodes from mobile API
-  Future<List<Chapter>> _fetchEpisodes(int titleNo) async {
+  Future<List<Chapter>> _fetchEpisodes(int titleNo, String mangaTitle) async {
     final url =
         'https://$_mobileApiDomain/api/v1/webtoon/$titleNo/episodes?pageSize=99999';
 
@@ -547,13 +547,11 @@ class WebtoonParser extends ComicParser {
             '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
       }
 
-      chapters.add(
-        Chapter(
-          title: episodeTitle.isNotEmpty ? episodeTitle : 'Episode $episodeNo',
-          href: chapterHref,
-          date: date,
-        ),
-      );
+      final chapterTitle = episodeTitle.isNotEmpty
+          ? '$mangaTitle - $episodeTitle'
+          : '$mangaTitle - Episode $episodeNo';
+
+      chapters.add(Chapter(title: chapterTitle, href: chapterHref, date: date));
     }
 
     return chapters;
@@ -576,8 +574,8 @@ class WebtoonParser extends ComicParser {
     String viewerUrl = _viewerLinkCache[href] ?? '';
 
     if (viewerUrl.isEmpty) {
-      // If not in cache, fetch episodes to populate cache
-      await _fetchEpisodes(titleNo);
+      // If not in cache, fetch episodes to populate cache (title not needed here)
+      await _fetchEpisodes(titleNo, '');
       viewerUrl = _viewerLinkCache[href] ?? '';
     }
 

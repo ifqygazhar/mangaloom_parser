@@ -569,7 +569,11 @@ class MangaParkParser extends ComicParser {
       if (chTitle.isEmpty || chHref.isEmpty) continue;
 
       chapters.add(
-        Chapter(title: chTitle, href: _trimPrefix(chHref), date: chDate),
+        Chapter(
+          title: '$title - $chTitle',
+          href: _trimPrefix(chHref),
+          date: chDate,
+        ),
       );
     }
 

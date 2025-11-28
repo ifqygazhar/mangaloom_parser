@@ -502,7 +502,7 @@ class ComicSansParser extends ComicParser {
       if (chapterTitle.isNotEmpty && chapterHref.isNotEmpty) {
         chapters.add(
           Chapter(
-            title: chapterTitle,
+            title: '$title - $chapterTitle',
             href: _trimPrefix(chapterHref, _baseUrl),
             date: chapterDate,
           ),

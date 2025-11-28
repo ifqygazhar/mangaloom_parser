@@ -681,7 +681,9 @@ class KomikluParser extends ComicParser {
       if (chapterTitle.isNotEmpty && chapterHref.isNotEmpty) {
         chapterHref = _toRelativeUrl(chapterHref);
 
-        chapters.add(Chapter(title: chapterTitle, href: chapterHref, date: ''));
+        chapters.add(
+          Chapter(title: "$title - $chapterTitle", href: chapterHref, date: ''),
+        );
       }
     }
 
