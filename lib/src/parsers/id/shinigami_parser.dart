@@ -471,6 +471,8 @@ class ShinigamiParser extends ComicParser {
       );
     }).toList();
 
+    final reversedChapters = chapters.reversed.toList();
+
     return ComicDetail(
       href: href,
       title: item['title'] as String,
@@ -483,9 +485,11 @@ class ShinigamiParser extends ComicParser {
       author: authors,
       updatedOn: item['updated_at'] as String? ?? '',
       rating: (item['user_rate'] as num?)?.toStringAsFixed(1) ?? '0.0',
-      latestChapter: chapters.isNotEmpty ? chapters.last.title : null,
+      latestChapter: reversedChapters.isNotEmpty
+          ? reversedChapters.first.title
+          : null,
       genres: genres,
-      chapters: chapters,
+      chapters: reversedChapters,
     );
   }
 

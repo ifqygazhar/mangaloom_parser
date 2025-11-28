@@ -13,7 +13,7 @@ import 'package:mangaloom_parser/src/utils/cache.dart';
 final jsRuntime = getJavascriptRuntime();
 
 class BatotoParser extends ComicParser {
-  static const String _baseUrl = 'https://ato.to';
+  static const String _baseUrl = 'https://comiko.org';
 
   final http.Client _client;
 
@@ -772,6 +772,8 @@ class BatotoParser extends ComicParser {
       }
     }
 
+    final reversedChapters = chapters.reversed.toList();
+
     return ComicDetail(
       href: _toRelativeUrl(href),
       title: title,
@@ -784,9 +786,11 @@ class BatotoParser extends ComicParser {
       author: author,
       updatedOn: '',
       rating: '',
-      latestChapter: chapters.isNotEmpty ? chapters.last.title : null,
+      latestChapter: reversedChapters.isNotEmpty
+          ? reversedChapters.first.title
+          : null,
       genres: genres,
-      chapters: chapters,
+      chapters: reversedChapters,
     );
   }
 

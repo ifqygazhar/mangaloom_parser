@@ -6,7 +6,7 @@ import 'package:mangaloom_parser/src/models/cached_result.dart';
 import 'package:mangaloom_parser/src/utils/cache.dart';
 
 class ComicSansParser extends ComicParser {
-  static const String _baseUrl = 'https://lc3.cosmicscans.asia';
+  static const String _baseUrl = 'https://lc4.cosmicscans.asia';
   static const String _mangaPrefix = '$_baseUrl/manga';
 
   final http.Client _client;
@@ -522,7 +522,7 @@ class ComicSansParser extends ComicParser {
       author: author,
       updatedOn: updatedOn,
       rating: rating,
-      latestChapter: latestChapter,
+      latestChapter: chapters.isNotEmpty ? chapters.first.title : latestChapter,
       genres: genres,
       chapters: chapters,
     );

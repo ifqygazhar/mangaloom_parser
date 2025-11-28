@@ -573,9 +573,6 @@ class MangaParkParser extends ComicParser {
       );
     }
 
-    // Reverse chapters order (oldest first)
-    final reversedChapters = chapters.reversed.toList();
-
     // Latest chapter
     final latestChapter = chapters.isNotEmpty ? chapters.first.title : '';
 
@@ -591,7 +588,7 @@ class MangaParkParser extends ComicParser {
       rating: rating,
       latestChapter: latestChapter,
       genres: genres,
-      chapters: reversedChapters,
+      chapters: chapters,
       released: '', // MangaPark doesn't have released date in the same format
       updatedOn: '', // Could be extracted if needed
     );

@@ -480,6 +480,7 @@ class WebtoonParser extends ComicParser {
 
     // Fetch episodes/chapters
     final chapters = await _fetchEpisodes(titleNo);
+    final reversedChapters = chapters.reversed.toList();
 
     return ComicDetail(
       href: href,
@@ -493,9 +494,11 @@ class WebtoonParser extends ComicParser {
       author: author,
       updatedOn: '',
       rating: '0.0',
-      latestChapter: chapters.isNotEmpty ? chapters.last.title : null,
+      latestChapter: reversedChapters.isNotEmpty
+          ? reversedChapters.first.title
+          : null,
       genres: genres,
-      chapters: chapters,
+      chapters: reversedChapters,
     );
   }
 

@@ -459,6 +459,8 @@ class MangaPlusParser extends ComicParser {
       latestChapter = chapters.first.title;
     }
 
+    final reversedChapters = chapters.reversed.toList();
+
     return ComicDetail(
       href: href,
       title: name,
@@ -471,9 +473,11 @@ class MangaPlusParser extends ComicParser {
       author: author,
       updatedOn: '',
       rating: '',
-      latestChapter: latestChapter,
+      latestChapter: reversedChapters.isNotEmpty
+          ? reversedChapters.first.title
+          : latestChapter,
       genres: [],
-      chapters: chapters,
+      chapters: reversedChapters,
     );
   }
 
