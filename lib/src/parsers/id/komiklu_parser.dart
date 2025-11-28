@@ -552,6 +552,12 @@ class KomikluParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
+    // print('Response body length: ${response.body.length}');
+    // print(
+    //   'Contains chapterContainer: ${response.body.contains('chapterContainer')}',
+    // );
+    // print('Contains chapter-item: ${response.body.contains('chapter-item')}');
+
     var title = doc.querySelector('h1.text-3xl.font-bold')?.text.trim() ?? '';
     if (title.isEmpty) {
       title = doc.querySelector('h1')?.text.trim() ?? '';
@@ -591,14 +597,12 @@ class KomikluParser extends ComicParser {
       'div.flex.items-center.gap-4.text-gray-400 > span.flex.items-center.gap-1',
     );
     for (final span in infoSpans) {
-      // Check for year (span.text-gray-200 containing 4 digits)
       final yearText =
           span.querySelector('span.text-gray-200')?.text.trim() ?? '';
       if (yearText.length == 4 && int.tryParse(yearText) != null) {
         year = yearText;
       }
 
-      // Check for status (span.text-sky-400.font-semibold)
       final statusText =
           span.querySelector('span.text-sky-400.font-semibold')?.text.trim() ??
           '';
@@ -620,12 +624,58 @@ class KomikluParser extends ComicParser {
     }
 
     final chapters = <Chapter>[];
-    final chapterElements = doc.querySelectorAll(
+
+    var chapterElements = doc.querySelectorAll(
       'ul#chapterContainer li.chapter-item',
     );
+    // print(
+    //   'Selector 1 (ul#chapterContainer li.chapter-item): ${chapterElements.length} items',
+    // );
+
+    if (chapterElements.isEmpty) {
+      chapterElements = doc.querySelectorAll(
+        '#chapterContainer li[data-chapter]',
+      );
+      // print(
+      //   'Selector 2 (#chapterContainer li[data-chapter]): ${chapterElements.length} items',
+      // );
+    }
+
+    if (chapterElements.isEmpty) {
+      chapterElements = doc.querySelectorAll('#chapterContainer > li');
+      // print(
+      //   'Selector 3 (#chapterContainer > li): ${chapterElements.length} items',
+      // );
+    }
+
+    if (chapterElements.isEmpty) {
+      final container = doc.querySelector('#chapterContainer');
+      if (container != null) {
+        chapterElements = container.querySelectorAll('li');
+        // print(
+        //   'Selector 4 (container.querySelectorAll li): ${chapterElements.length} items',
+        // );
+      }
+    }
+
+    if (chapterElements.isEmpty) {
+      chapterElements = doc.querySelectorAll('li[data-chapter]');
+      // print(
+      //   'Selector 5 (li[data-chapter] anywhere): ${chapterElements.length} items',
+      // );
+    }
+
     for (final li in chapterElements) {
-      final chapterTitle =
-          li.querySelector('span.chapter-name')?.text.trim() ?? '';
+      String chapterTitle = li.attributes['data-chapter'] ?? '';
+
+      if (chapterTitle.isEmpty) {
+        chapterTitle = li.querySelector('span.chapter-name')?.text.trim() ?? '';
+      }
+
+      if (chapterTitle.isEmpty) {
+        chapterTitle = li.querySelector('span')?.text.trim() ?? '';
+      }
+
       var chapterHref = li.querySelector('a')?.attributes['href'] ?? '';
 
       if (chapterTitle.isNotEmpty && chapterHref.isNotEmpty) {
@@ -634,6 +684,8 @@ class KomikluParser extends ComicParser {
         chapters.add(Chapter(title: chapterTitle, href: chapterHref, date: ''));
       }
     }
+
+    print('Total chapters parsed: ${chapters.length}');
 
     return ComicDetail(
       href: _toRelativeUrl(href),
