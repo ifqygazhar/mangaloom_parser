@@ -764,9 +764,7 @@ class BatotoParser extends ComicParser {
 
         chapters.add(
           Chapter(
-            title: chTitle.isNotEmpty
-                ? "$title - $chTitle"
-                : '$title - Chapter ${i + 1}',
+            title: chTitle.isNotEmpty ? chTitle : 'Chapter ${i + 1}',
             href: _toRelativeUrl(chHref),
             date: _formatDate(timestamp),
           ),

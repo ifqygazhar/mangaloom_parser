@@ -459,15 +459,15 @@ class ShinigamiParser extends ComicParser {
     );
 
     final List chaptersList = chaptersData['data'] as List;
-    final mangaTitle = item['title'] as String;
+    // final mangaTitle = item['title'] as String;
     final chapters = chaptersList.map((ch) {
       final chapterNumber =
           'Chapter ${(ch['chapter_number'] as num).toStringAsFixed(1)}';
       final chapterSubtitle = ch['chapter_title'] as String;
 
       final chapterTitle = chapterSubtitle.isEmpty
-          ? '$mangaTitle - $chapterNumber'
-          : '$mangaTitle - $chapterNumber: $chapterSubtitle';
+          ? chapterNumber
+          : '$chapterNumber: $chapterSubtitle';
 
       return Chapter(
         title: chapterTitle,

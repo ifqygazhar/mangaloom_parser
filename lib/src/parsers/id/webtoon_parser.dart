@@ -548,8 +548,8 @@ class WebtoonParser extends ComicParser {
       }
 
       final chapterTitle = episodeTitle.isNotEmpty
-          ? '$mangaTitle - $episodeTitle'
-          : '$mangaTitle - Episode $episodeNo';
+          ? episodeTitle
+          : 'Episode $episodeNo';
 
       chapters.add(Chapter(title: chapterTitle, href: chapterHref, date: date));
     }
