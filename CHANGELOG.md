@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2025-11-28
+
+### Fixed
+
+- 🐛 **Chapter Title Formatting** - Chapters now include the manga title prefix across parsers:
+  - Format: "Title - Chapter" (applied to Shinigami, ComicSans, MangaPark, Webtoon, Batoto)
+- 🐛 **Komiklu Chapter Scraping** - Fixed chapter extraction for new structure where <a> wraps <li>
+  - Correctly reads href from the <a> and extracts chapter name from inner elements
+- 🐛 **Chapter Order Normalization** - Ensure newest chapters appear at the top (index 0) for all parsers
+  - Adjusted per-source logic to avoid double-reversing when the site already provides newest-first
+- 🐛 **Removed Debug Prints & Cleaned Comments** - Removed development print statements and unnecessary inline comments across parser files for a more professional codebase
+- 🐛 **Komiklu Lazy Images** - Confirmed support for `data-src` (lazy loading) and `src` fallback (already addressed in 0.1.2, reiterated)
+- 🐛 **Selector Compatibility** - Replaced jQuery-style selectors (e.g. `:contains`) with robust standard-CSS + text-matching fallbacks
+
+### Changed
+
+- ♻️ **Code Quality** - Cleaned up parser files by removing noisy comments and debug output
+- 🔄 **Consistent Chapter UI** - Unified chapter title presentation in UI/readers across supported sources
+- 📝 **Documentation/README** - Added banner and Google Play download button to README
+
+### Notes
+
+- Per-source behavior is preserved: when a site already provides newest-first ordering, no reversal is applied.
+- Batoto flag code prefix remains in place (e.g., "ID - Title") as part of title enhancements.
+
 ## [0.1.2] - 2025-11-12
 
 ### Fixed
