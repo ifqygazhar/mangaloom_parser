@@ -13,7 +13,7 @@ import 'package:mangaloom_parser/src/utils/cache.dart';
 final jsRuntime = getJavascriptRuntime();
 
 class BatotoParser extends ComicParser {
-  static const String _baseUrl = 'https://comiko.org';
+  static const String _baseUrl = 'https://xto.to';
 
   final http.Client _client;
 

@@ -720,53 +720,54 @@ class KomikluParser extends ComicParser {
 
     final doc = html_parser.parse(response.body);
 
-    final title = doc.querySelector('h1.text-2xl.font-bold')?.text.trim() ?? '';
+    // Try multiple title selectors
+    var title = doc.querySelector('div.header-title')?.text.trim() ?? '';
+    if (title.isEmpty) {
+      title = doc.querySelector('title')?.text.trim() ?? '';
+    }
+    if (title.isEmpty) {
+      title = doc.querySelector('h1')?.text.trim() ?? '';
+    }
 
     if (title.isEmpty) {
       throw Exception('Chapter not found');
     }
 
-    // Extract prev chapter from "Previous Chapter" button
-    // CSS :contains() is not supported, so we search through all <a> elements
+    // Extract prev chapter from button with specific ID
     String prev = '';
-    final allLinks = doc.querySelectorAll('a[href]');
-    for (final link in allLinks) {
-      final text = link.text.trim();
-      if (text.contains('Previous Chapter') || text.contains('Previous')) {
-        final prevHref = link.attributes['href'] ?? '';
-        if (prevHref.isNotEmpty && prevHref != '#') {
-          prev = _toRelativeUrl(prevHref);
-          if (prev.isEmpty || prev == '/') {
-            prev = '';
-          }
-          break;
-        }
+    final prevBtn = doc.querySelector('button#prevBtn');
+    if (prevBtn != null) {
+      // Check if button is not disabled
+      final isDisabled = prevBtn.attributes.containsKey('disabled');
+      if (!isDisabled) {
+        prev = 'prev'; // Placeholder, actual URL needs to be extracted from JS
       }
     }
 
-    // Extract next chapter from "Next Chapter" button
+    // Extract next chapter from button with specific ID
     String next = '';
-    for (final link in allLinks) {
-      final text = link.text.trim();
-      if (text.contains('Next Chapter') || text.contains('Next')) {
-        final nextHref = link.attributes['href'] ?? '';
-        if (nextHref.isNotEmpty && nextHref != '#') {
-          next = _toRelativeUrl(nextHref);
-          if (next.isEmpty || next == '/') {
-            next = '';
-          }
-          break;
-        }
+    final nextBtn = doc.querySelector('button#nextBtn');
+    if (nextBtn != null) {
+      final isDisabled = nextBtn.attributes.containsKey('disabled');
+      if (!isDisabled) {
+        next = 'next'; // Placeholder, actual URL needs to be extracted from JS
       }
     }
 
+    // Extract images from image-container divs
     final images = <String>[];
-    final imageElements = doc.querySelectorAll('div#viewer img.webtoon-img');
-    for (final img in imageElements) {
-      // Try data-src first (for lazy loading), then fallback to src
-      var src = img.attributes['data-src'] ?? img.attributes['src'] ?? '';
-      if (src.isNotEmpty) {
-        images.add(src);
+    final imageContainers = doc.querySelectorAll('div.image-container');
+
+    for (final container in imageContainers) {
+      final img = container.querySelector('img.webtoon-img');
+      if (img != null) {
+        // Try src first (already loaded), then data-src (lazy load)
+        var src = img.attributes['src'] ?? img.attributes['data-src'] ?? '';
+        if (src.isNotEmpty && !src.contains('data:image')) {
+          // Clean up and add to list
+          src = _toAbsoluteUrl(src);
+          images.add(src);
+        }
       }
     }
 
