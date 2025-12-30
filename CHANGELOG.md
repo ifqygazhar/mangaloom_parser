@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2025-12-30
+
+### Fixed
+
+- 🐛 **KomikluParser Chapter Reading** - Fixed chapter image extraction and navigation
+
+  - Corrected image selector to use `div.image-container img.webtoon-img`
+  - Enhanced image loading to check both `src` (loaded) and `data-src` (lazy load) attributes
+  - Added filter to skip base64 placeholder images (`data:image`)
+  - Fixed prev/next button selectors to use `button#prevBtn` and `button#nextBtn`
+  - Improved title extraction with `div.header-title` selector
+  - Added disabled state checking for navigation buttons
+
+- 🐛 **Batoto change url**
+  - Change the base url with active url
+
+### Technical Details
+
+- 🎯 **Image Priority**: Checks `src` attribute first, then falls back to `data-src` for lazy-loaded images
+- 🔧 **Navigation**: Properly detects enabled/disabled states of prev/next chapter buttons
+- 🖼️ **Image Filtering**: Automatically skips base64 data URIs used as placeholders
+- ⚡ **Selector Accuracy**: Updated selectors to match actual HTML structure of Komiklu chapter pages
+
 ## [0.1.4] - 2025-11-28
 
 ### Fixed
