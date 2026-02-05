@@ -93,7 +93,13 @@ class KomikuParser extends ComicParser {
   }
 
   String _extractKomikuRating(String rating) {
-    return rating.trim();
+    return rating
+        .replaceAll(RegExp(r'\s*Pembaca', caseSensitive: false), '')
+        // Tambahkan \s*\|?\s* di regex untuk menangkap spasi dan tanda pipe '|' opsional sebelum kata
+        .replaceAll(RegExp(r'\s*\|?\s*Warna', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\s*\|?\s*Berwarna', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\s*\|?\s*Ber(\s|$)', caseSensitive: false), '')
+        .trim();
   }
 
   // Parsing logic for comic items list
