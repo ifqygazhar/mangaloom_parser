@@ -95,10 +95,9 @@ class KomikuParser extends ComicParser {
   String _extractKomikuRating(String rating) {
     return rating
         .replaceAll(RegExp(r'\s*Pembaca', caseSensitive: false), '')
-        // Tambahkan \s*\|?\s* di regex untuk menangkap spasi dan tanda pipe '|' opsional sebelum kata
         .replaceAll(RegExp(r'\s*\|?\s*Warna', caseSensitive: false), '')
         .replaceAll(RegExp(r'\s*\|?\s*Berwarna', caseSensitive: false), '')
-        .replaceAll(RegExp(r'\s*\|?\s*Ber(\s|$)', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\s*\|?\s*Ber\b', caseSensitive: false), '')
         .trim();
   }
 
@@ -124,9 +123,11 @@ class KomikuParser extends ComicParser {
         final hrefRaw = e.querySelector('.bgei a')?.attributes['href'] ?? '';
         final thumbnail = e.querySelector('.bgei img')?.attributes['src'] ?? '';
         final typeRaw = e.querySelector('.tpe1_inf')?.text.trim() ?? '';
-        final ratingRaw = e.querySelector('.kan .judul2')?.text.trim() ?? '';
 
-        // Latest chapter logic
+        // Parse rating dari .judul2
+        var ratingRaw = e.querySelector('.kan .judul2')?.text.trim() ?? '';
+
+        // Latest chapter logic - ambil dari .new1 (ini terpisah dari rating)
         String latest = '';
         final newElements = e.querySelectorAll('.new1');
         if (newElements.isNotEmpty) {
