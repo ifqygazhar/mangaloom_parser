@@ -5,12 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-02-05
+
+### Added
+
+- 🎨 **KomikuParser** - New parser for Komiku (komiku.org) Indonesian comic source
+- 🌐 **Dual Domain Support** - Implemented hybrid architecture separating API calls and Web scraping:
+  - Listing operations (Popular, Recommended, Search) use `api.komiku.org`
+  - Content operations (Detail, Chapter) use `komiku.org`
+- 📱 **Complete API Integration**:
+  - `fetchPopular()` - Most popular manga via API
+  - `fetchRecommended()` - Recommended manga list
+  - `fetchNewest({page})` - Latest updates with pagination
+  - `search(query)` - Search functionality via API integration
+  - `fetchDetail(href)` - comprehensive metadata scraping (Title, Alt Title, Synopsis, Info Table)
+  - `fetchChapter(href)` - Chapter reader with intelligent image extraction
+  - `fetchByGenre(genre)` & `fetchGenres()` - Full genre browsing capabilities
+- 🖼️ **CDN Optimization** - Automatic CDN domain replacement (`cdn1` → `img`) for reliable image loading
+
+### Technical Details
+
+- 🔧 **URL Strategy**: Aligned with Golang microservice architecture using `TargetURL3` (API) and `TargetURL_3_MAINKOMIKU` (Main)
+- 🛡️ **Request Headers**: Enhanced headers (`User-Agent`, `Accept-Language`, `Referer`) to emulate browser behavior and bypass 403/Cloudflare protections
+- 🔗 **Link Normalization**: Robust `_trimKomikuHref` function to handle cross-domain links (`.id`, `.com`, `.org`) and relative paths
+- 🧭 **Navigation Logic**: Custom `_constructPrevLink` logic to generate previous chapter links based on numbering when DOM elements are missing
+- ⚡ **Caching**: Integrated standard 5-minute caching for all list operations
+
+### Fixed
+
+- 🐛 **Domain Handling**: Fixed issue where listing pages failed to scrape by correcty pointing to `api.komiku.org` instead of the main domain
+- 🐛 **Thumbnail Quality**: Added `_cleanThumbnailKomikuUrl` to remove resize parameters for higher quality covers
+
 ## [0.1.5] - 2025-12-30
 
 ### Fixed
 
 - 🐛 **KomikluParser Chapter Reading** - Fixed chapter image extraction and navigation
-
   - Corrected image selector to use `div.image-container img.webtoon-img`
   - Enhanced image loading to check both `src` (loaded) and `data-src` (lazy load) attributes
   - Added filter to skip base64 placeholder images (`data:image`)

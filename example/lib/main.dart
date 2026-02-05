@@ -38,6 +38,7 @@ enum ParserType {
   batoto,
   mangaplus,
   komiklu,
+  komiku,
 }
 
 enum TestFunction {
@@ -77,6 +78,7 @@ class _HomePageState extends State<HomePage> {
     ParserType.batoto: 'Batoto - EN',
     ParserType.mangaplus: 'MangaPlus - ID',
     ParserType.komiklu: 'Komiklu - ID',
+    ParserType.komiku: 'Komiku - ID',
   };
 
   @override
@@ -99,6 +101,8 @@ class _HomePageState extends State<HomePage> {
       parser = MangaPlusParser();
     } else if (selectedParser == ParserType.komiklu) {
       parser = KomikluParser();
+    } else if (selectedParser == ParserType.komiku) {
+      parser = KomikuParser();
     } else {
       parser = WebtoonParser();
     }
@@ -120,6 +124,8 @@ class _HomePageState extends State<HomePage> {
       (parser as MangaPlusParser).dispose();
     } else if (parser is KomikluParser) {
       (parser as KomikluParser).dispose();
+    } else if (parser is KomikuParser) {
+      (parser as KomikuParser).dispose();
     }
     super.dispose();
   }

@@ -1,6 +1,6 @@
 name: mangaloom_parser
 description: A powerful Flutter package for parsing comic/manga websites. Fetch popular comics, search, filter by genre, and read chapters with ease.
-version: 0.1.5
+version: 0.1.6
 homepage: https://github.com/ifqygazhar/mangaloom_parser
 repository: https://github.com/ifqygazhar/mangaloom_parser
 issue_tracker: https://github.com/ifqygazhar/mangaloom_parser/issues
