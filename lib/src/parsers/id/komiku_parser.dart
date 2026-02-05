@@ -97,7 +97,17 @@ class KomikuParser extends ComicParser {
         .replaceAll(RegExp(r'\s*Pembaca', caseSensitive: false), '')
         .replaceAll(RegExp(r'\s*\|?\s*Warna', caseSensitive: false), '')
         .replaceAll(RegExp(r'\s*\|?\s*Berwarna', caseSensitive: false), '')
-        .replaceAll(RegExp(r'\s*\|?\s*Ber\b', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\s*\|?\s*Ber(\s|$)', caseSensitive: false), '')
+        // Remove time stamps (e.g. 45 menit lalu, 2 jam lalu, Kemarin)
+        .replaceAll(
+          RegExp(
+            r'\d+\s+(detik|menit|jam|hari|minggu|bulan|tahun)\s+lalu',
+            caseSensitive: false,
+          ),
+          '',
+        )
+        .replaceAll(RegExp(r'Kemarin', caseSensitive: false), '')
+        .replaceAll('|', '') // Remove remaining pipe characters
         .trim();
   }
 
@@ -124,17 +134,15 @@ class KomikuParser extends ComicParser {
         final thumbnail = e.querySelector('.bgei img')?.attributes['src'] ?? '';
         final typeRaw = e.querySelector('.tpe1_inf')?.text.trim() ?? '';
 
-        // Parse rating dari .judul2
+        // Parse rating dari .judul2, pisahkan dari waktu update
         var ratingRaw = e.querySelector('.kan .judul2')?.text.trim() ?? '';
-
-        // Latest chapter logic - ambil dari .new1 (ini terpisah dari rating)
+        // Latest chapter logic - ambil dari .new1 seperti biasa
         String latest = '';
         final newElements = e.querySelectorAll('.new1');
         if (newElements.isNotEmpty) {
           final lastNew = newElements.last;
           final spans = lastNew.querySelectorAll('a span');
           if (spans.length >= 2) {
-            // Go Logic: .Eq(1) -> index 1
             latest = spans[1].text.trim();
           }
           if (latest.isEmpty) {
