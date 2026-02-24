@@ -39,6 +39,8 @@ enum ParserType {
   mangaplus,
   komiklu,
   komiku,
+  kiryuu,
+  ikiru,
 }
 
 enum TestFunction {
@@ -79,6 +81,8 @@ class _HomePageState extends State<HomePage> {
     ParserType.mangaplus: 'MangaPlus - ID',
     ParserType.komiklu: 'Komiklu - ID',
     ParserType.komiku: 'Komiku - ID',
+    ParserType.kiryuu: 'Kiryuu - ID',
+    ParserType.ikiru: 'Ikiru - ID',
   };
 
   @override
@@ -103,6 +107,10 @@ class _HomePageState extends State<HomePage> {
       parser = KomikluParser();
     } else if (selectedParser == ParserType.komiku) {
       parser = KomikuParser();
+    } else if (selectedParser == ParserType.kiryuu) {
+      parser = KiryuuParser();
+    } else if (selectedParser == ParserType.ikiru) {
+      parser = IkiruParser();
     } else {
       parser = WebtoonParser();
     }
@@ -126,6 +134,10 @@ class _HomePageState extends State<HomePage> {
       (parser as KomikluParser).dispose();
     } else if (parser is KomikuParser) {
       (parser as KomikuParser).dispose();
+    } else if (parser is KiryuuParser) {
+      (parser as KiryuuParser).dispose();
+    } else if (parser is IkiruParser) {
+      (parser as IkiruParser).dispose();
     }
     super.dispose();
   }
@@ -229,6 +241,10 @@ class _HomePageState extends State<HomePage> {
       (parser as MangaPlusParser).dispose();
     } else if (parser is KomikluParser) {
       (parser as KomikluParser).dispose();
+    } else if (parser is KiryuuParser) {
+      (parser as KiryuuParser).dispose();
+    } else if (parser is IkiruParser) {
+      (parser as IkiruParser).dispose();
     }
 
     setState(() {
@@ -298,7 +314,7 @@ class _HomePageState extends State<HomePage> {
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 setState(() {
-                  selectedGenre = genre.href.replaceAll('/', '');
+                  selectedGenre = genre.href;
                   selectedFunction = TestFunction.byGenre;
                   currentPage = 1;
                 });
@@ -987,7 +1003,7 @@ class GenreListDialog extends StatelessWidget {
             return ListTile(
               title: Text(genre.title),
               onTap: () {
-                Navigator.pop(context, genre.href.replaceAll('/', ''));
+                Navigator.pop(context, genre.href);
               },
             );
           },

@@ -17,3 +17,6 @@ export 'src/parsers/id/webtoon_parser.dart';
 export 'src/parsers/en/batoto_parser.dart';
 export 'src/parsers/id/komiklu_parser.dart';
 export 'src/parsers/id/komiku_parser.dart';
+export 'src/parsers/lib/natsu_parser.dart';
+export 'src/parsers/id/kiryuu_parser.dart';
+export 'src/parsers/id/ikiru_parser.dart';
