@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.10] - 2026-02-25
+
+### Added
+
+- 🎨 **KiryuuParser** - New parser for Kiryuu (kiryuu03.com) Indonesian comic source
+- 🎨 **IkiruParser** - New parser for Ikiru (02.ikiru.wtf) Indonesian comic source
+- 🏗️ **NatsuParser Base Class** - Abstract base parser for NatsuId WordPress theme sites
+  - Supports any site using the NatsuId theme by Dzul Qurnain
+  - Subclasses only need to provide `domain` and optionally override `parseChapterImages()`
+- 📱 **Complete API Integration** for both parsers:
+  - `fetchPopular()` - Most popular manga via advanced search
+  - `fetchRecommended()` - Top rated manga
+  - `fetchNewest({page})` - Latest updates with pagination
+  - `fetchAll({page})` - All manga sorted alphabetically
+  - `search(query)` - Full-text search via multipart POST
+  - `fetchDetail(href)` - Comprehensive metadata scraping (title, alt titles, description, cover, author, status, rating, genres, chapters)
+  - `fetchChapter(href)` - Chapter reader with image extraction and prev/next navigation
+  - `fetchByGenre(genre, {page})` & `fetchGenres()` - Full genre browsing
+  - `fetchFiltered({page, genre, status, type, order})` - Advanced filtering with status, type, and sort options
+  - `fetchMultipleLists()` - Batch fetch multiple list types efficiently
+
+### Technical Details
+
+- 🔒 **CSRF Nonce**: Automatic nonce fetching and caching from `admin-ajax.php?action=get_nonce`
+- 📡 **Multipart POST**: Uses `http.MultipartRequest` for advanced search endpoint
+- 🔄 **HTMX Chapter Loading**: Paginated chapter fetching via `admin-ajax.php?action=chapter_list` with `HX-Request` headers (up to 50 pages)
+- 🌐 **WP JSON API**: Genre fetching via `/wp-json/wp/v2/genre` with JavaScript fallback parsing
+- 📅 **Date Parsing**: Supports relative dates ("X ago") and "MMM dd, yyyy" formats
+- ⚡ **Caching**: Standard 5-minute cache for all list operations
+- 🎯 **Kiryuu Custom Selector**: Overrides `parseChapterImages()` to use `section[data-image-data] img`
+- 🧩 **Extensible Architecture**: New NatsuId sites can be added with ~15 lines of code
+
+### Fixed
+
+- 🐛 **CSS `:contains()` Selector** - Replaced jQuery-only `:contains()` pseudo-selector with manual Element iteration + `.text.contains()`, as Dart's `html` package does not support it. This caused `parseMangaList()` to silently skip all manga items (caught by `catch` → `continue`), resulting in empty lists
+- 🐛 **Rating Display Inversion** - Fixed rating values appearing inverted (e.g., "0.8" instead of "8.0"). Removed Kotlin-style normalization (÷10/÷5) that was inappropriate for display strings — raw rating text is now used directly
+- 🐛 **Genre Filter Empty Results** - Fixed genre slug extraction for advanced search API. The WordPress endpoint expects bare slugs (`"action"`) but was receiving URL paths (`"/genre/action/"`). Added `_extractSlug()` helper to normalize genre paths before API calls
+- 🐛 **Genre `href` Format** - Standardized `Genre.href` to use `/$slug/` format (e.g., `/action/`) instead of `/genre/$slug/`, consistent with all other parsers (ShinigamiParser, KomikluParser, etc.)
+- 🐛 **Example App Genre Selection** - Fixed `genre.href.replaceAll('/', '')` in example app which mangled `/genre/action/` into `genreaction`. Now passes `genre.href` as-is, letting parsers handle slug extraction internally
+
 ## [0.1.6] - 2026-02-05
 
 ### Added
@@ -343,6 +383,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Error handling guidelines
 - ✅ Contributing guidelines
 
+[0.1.10]: https://github.com/ifqygazhar/mangaloom_parser/releases/tag/v0.1.10
 [0.1.4]: https://github.com/ifqygazhar/mangaloom_parser/releases/tag/v0.1.4
 [0.1.3]: https://github.com/ifqygazhar/mangaloom_parser/releases/tag/v0.1.3
 [0.1.2]: https://github.com/ifqygazhar/mangaloom_parser/releases/tag/v0.1.2

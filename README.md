@@ -31,9 +31,12 @@ A powerful and flexible Flutter package for parsing comic/manga websites. Easily
 | **ComicSansParser** | CosmicScans | ID       | ✅ Active |
 | **MangaparkParser** | Mangapark   | EN       | ✅ Active |
 | **WebtoonParser**   | Webtoon     | ID       | ✅ Active |
-| **BatotoParser**    | Batoto      | EN       | ✅ Active |
+| **BatotoParser**    | Batoto      | EN       | 💀 Died   |
 | **MangaplusParser** | Mangaplus   | ID       | ✅ Active |
 | **KomikluParser**   | Komiklu     | ID       | ✅ Active |
+| **KomikuParser**    | Komiku      | ID       | ✅ Active |
+| **KiryuuParser**    | Kiryuu      | ID       | ✅ Active |
+| **IkiruParser**     | Ikiru       | ID       | ✅ Active |
 
 ## 📦 Installation
 
