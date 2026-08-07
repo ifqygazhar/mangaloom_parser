@@ -10,7 +10,7 @@ class IkiruParser extends NatsuParser {
   String get sourceName => 'Ikiru';
 
   @override
-  String get domain => '02.ikiru.wtf';
+  String get domain => '07.ikiru.wtf';
 
   @override
   String get language => 'ID';

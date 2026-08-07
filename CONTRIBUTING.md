@@ -87,6 +87,13 @@ To add support for a new comic source:
      @override
      String get language => 'ID';
 
+     // If the source blocks hotlinked images (403 without Referer),
+     // override imageHeaders so image widgets can load them:
+     @override
+     Map<String, String> get imageHeaders => const {
+       'Referer': '$_baseUrl/',
+     };
+
      // Implement all required methods...
 
      void dispose() {
@@ -138,7 +145,7 @@ To add support for a new comic source:
 Use clear and meaningful commit messages:
 
 - `feat: Add support for NewSite parser`
-- `fix: Fix chapter navigation in ComicSans parser`
+- `fix: Fix chapter navigation in Komiku parser`
 - `docs: Update README with new examples`
 - `style: Format code according to style guide`
 - `refactor: Simplify fetchDetail method`

@@ -32,14 +32,10 @@ class HomePage extends StatefulWidget {
 
 enum ParserType {
   shinigami,
-  comicsans,
   mangapark,
   webtoon,
-  batoto,
   mangaplus,
-  komiklu,
   komiku,
-  kiryuu,
   ikiru,
 }
 
@@ -74,14 +70,10 @@ class _HomePageState extends State<HomePage> {
 
   final subtitleParserSelection = {
     ParserType.shinigami: 'Shinigami - ID',
-    ParserType.comicsans: 'ComicSans - ID',
     ParserType.mangapark: 'MangaPark - EN',
     ParserType.webtoon: 'Webtoon - ID',
-    ParserType.batoto: 'Batoto - EN',
     ParserType.mangaplus: 'MangaPlus - ID',
-    ParserType.komiklu: 'Komiklu - ID',
     ParserType.komiku: 'Komiku - ID',
-    ParserType.kiryuu: 'Kiryuu - ID',
     ParserType.ikiru: 'Ikiru - ID',
   };
 
@@ -95,20 +87,12 @@ class _HomePageState extends State<HomePage> {
   void _initializeParser() {
     if (selectedParser == ParserType.shinigami) {
       parser = ShinigamiParser();
-    } else if (selectedParser == ParserType.comicsans) {
-      parser = ComicSansParser();
     } else if (selectedParser == ParserType.mangapark) {
       parser = MangaParkParser();
-    } else if (selectedParser == ParserType.batoto) {
-      parser = BatotoParser();
     } else if (selectedParser == ParserType.mangaplus) {
       parser = MangaPlusParser();
-    } else if (selectedParser == ParserType.komiklu) {
-      parser = KomikluParser();
     } else if (selectedParser == ParserType.komiku) {
       parser = KomikuParser();
-    } else if (selectedParser == ParserType.kiryuu) {
-      parser = KiryuuParser();
     } else if (selectedParser == ParserType.ikiru) {
       parser = IkiruParser();
     } else {
@@ -120,22 +104,14 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     if (parser is ShinigamiParser) {
       (parser as ShinigamiParser).dispose();
-    } else if (parser is ComicSansParser) {
-      (parser as ComicSansParser).dispose();
     } else if (parser is MangaParkParser) {
       (parser as MangaParkParser).dispose();
     } else if (parser is WebtoonParser) {
       (parser as WebtoonParser).dispose();
-    } else if (parser is BatotoParser) {
-      (parser as BatotoParser).dispose();
     } else if (parser is MangaPlusParser) {
       (parser as MangaPlusParser).dispose();
-    } else if (parser is KomikluParser) {
-      (parser as KomikluParser).dispose();
     } else if (parser is KomikuParser) {
       (parser as KomikuParser).dispose();
-    } else if (parser is KiryuuParser) {
-      (parser as KiryuuParser).dispose();
     } else if (parser is IkiruParser) {
       (parser as IkiruParser).dispose();
     }
@@ -229,20 +205,12 @@ class _HomePageState extends State<HomePage> {
     // Dispose old parser
     if (parser is ShinigamiParser) {
       (parser as ShinigamiParser).dispose();
-    } else if (parser is ComicSansParser) {
-      (parser as ComicSansParser).dispose();
     } else if (parser is MangaParkParser) {
       (parser as MangaParkParser).dispose();
     } else if (parser is WebtoonParser) {
       (parser as WebtoonParser).dispose();
-    } else if (parser is BatotoParser) {
-      (parser as BatotoParser).dispose();
     } else if (parser is MangaPlusParser) {
       (parser as MangaPlusParser).dispose();
-    } else if (parser is KomikluParser) {
-      (parser as KomikluParser).dispose();
-    } else if (parser is KiryuuParser) {
-      (parser as KiryuuParser).dispose();
     } else if (parser is IkiruParser) {
       (parser as IkiruParser).dispose();
     }
@@ -353,7 +321,11 @@ class _HomePageState extends State<HomePage> {
       itemCount: comics.length,
       itemBuilder: (context, index) {
         final comic = comics[index];
-        return ComicCard(comic: comic, onTap: () => _navigateToDetail(comic));
+        return ComicCard(
+          comic: comic,
+          imageHeaders: parser.imageHeaders,
+          onTap: () => _navigateToDetail(comic),
+        );
       },
     );
   }
@@ -916,7 +888,16 @@ class ComicCard extends StatelessWidget {
   final ComicItem comic;
   final VoidCallback onTap;
 
-  const ComicCard({super.key, required this.comic, required this.onTap});
+  /// HTTP headers untuk memuat gambar (hotlink protection).
+  /// Ambil dari `parser.imageHeaders`.
+  final Map<String, String> imageHeaders;
+
+  const ComicCard({
+    super.key,
+    required this.comic,
+    required this.onTap,
+    this.imageHeaders = const {},
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -930,11 +911,7 @@ class ComicCard extends StatelessWidget {
           children: [
             Expanded(
               child: Image.network(
-                headers: {
-                  'User-Agent':
-                      'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
-                  'Referer': "https://www.webtoons.com/id/",
-                },
+                headers: imageHeaders,
                 comic.thumbnail,
                 fit: BoxFit.cover,
                 width: double.infinity,
@@ -1061,6 +1038,7 @@ class DetailPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
                       detail.thumbnail,
+                      headers: parser.imageHeaders,
                       height: 300,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
@@ -1411,14 +1389,12 @@ class _ChapterReaderPageState extends State<ChapterReaderPage> {
                     }
 
                     // Regular image loading for other parsers
+                    // Gunakan imageHeaders dari parser agar hotlink
+                    // protection (mis. Komiku 403 tanpa Referer) teratasi.
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Image.network(
-                        headers: {
-                          'User-Agent':
-                              'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
-                          'Referer': "https://www.webtoons.com/id/",
-                        },
+                        headers: widget.parser.imageHeaders,
                         imageUrl,
                         fit: BoxFit.contain,
                         loadingBuilder: (context, child, loadingProgress) {

@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- 🖼️ **`ComicParser.imageHeaders`** - New property on the base parser class that exposes the HTTP headers required to load images (thumbnails & chapter panels). Solves "failed to load image" errors on sources with hotlink protection (referer check), e.g. Komiku returning `403 Forbidden` without a `Referer` header.
+  - Default implementation returns an empty map (safe to pass for all parsers).
+  - `KomikuParser` overrides it with `Referer: https://komiku.org/`.
+  - Usage: `Image.network(url, headers: parser.imageHeaders)`
+
+### Removed
+
+- 💀 **ComicSansParser** - Source dead (lc4.cosmicscans.asia domain no longer resolves)
+- 💀 **BatotoParser** - Source dead (xto.to returns 404)
+- 💀 **KomikluParser** - Source dead (v2.komiklu.com domain no longer resolves)
+- 💀 **KiryuuParser** - Source dead (kiryuu03.com SSL hostname mismatch, domain sold/parked)
+
+### Changed
+
+- 📦 **Dependencies** - `crypto`, `encrypt`, and `flutter_js` are now commented out in `pubspec.yaml` (previously only used by the removed `BatotoParser`). Uncomment if needed again in the future.
+- 🧹 **Example app** - Removed dead parsers from the parser switcher; all `Image.network` calls now use `parser.imageHeaders` instead of hardcoded headers.
+- ✅ **Tests** - Added `test/komiku_parser_test.dart` (imageHeaders contract + real chapter HTML parsing) and `test/parser_health_test.dart` (live health check for all active parsers). Removed obsolete template test.
+
+### Notes
+
+- `NatsuParser` base class is **retained** — it is still the base class of `IkiruParser`.
+- `MangaPlusParser` and `MangaParkParser` remain active: their sources are online; test failures in sandboxed environments are caused by SSL inspection / anti-bot protection, not dead sources.
+
 ## [0.1.10] - 2026-02-25
 
 ### Added

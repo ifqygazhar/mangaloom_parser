@@ -12,13 +12,14 @@
 
 ## 🎯 Key Features
 
-✅ Multiple parser support (Shinigami, ComicSans)
+✅ Multiple parser support (Shinigami, MangaPark, Webtoon, MangaPlus, Komiku, Ikiru)
 ✅ Fetch popular, recommended, newest comics
 ✅ Search functionality
 ✅ Genre browsing and filtering
 ✅ Advanced filtering (status, type, order)
 ✅ Comic details with chapters
 ✅ Chapter reading with image URLs
+✅ `imageHeaders` for referer-protected image loading (hotlink protection)
 ✅ Pagination support
 ✅ Indonesian language support
 
@@ -80,10 +81,18 @@ mangaloom_parser/
 │       │   ├── read_chapter.dart
 │       │   └── genre.dart
 │       ├── parsers/                    # Parser implementations
-│       │   ├── parser_base.dart        # Base class
-│       │   └── id/                     # Indonesian parsers
-│       │       ├── shinigami_parser.dart
-│       │       └── comicsans_parser.dart
+│       │   ├── parser_base.dart        # Base class (ComicParser)
+│       │   ├── id/                     # Indonesian parsers
+│       │   │   ├── shinigami_parser.dart
+│       │   │   ├── mangaplus_parser.dart
+│       │   │   ├── webtoon_parser.dart
+│       │   │   ├── komiku_parser.dart
+│       │   │   ├── ikiru_parser.dart
+│       │   │   └── kiryuu_parser.dart  (removed - source dead)
+│       │   ├── en/                     # English parsers
+│       │   │   └── mangapark_parser.dart
+│       │   └── lib/                    # Shared base parsers
+│       │       └── natsu_parser.dart   # Base for NatsuId theme sites
 │       └── utils/                      # Utilities
 │           └── make_request_helper.dart
 ├── example/                            # Example Flutter app
@@ -100,8 +109,22 @@ mangaloom_parser/
 
 ### Parsers
 
-- `ShinigamiParser()` - Shinigami source
-- `ComicSansParser()` - CosmicScans source
+- `ShinigamiParser()` - Shinigami source (ID)
+- `MangaParkParser()` - MangaPark source (EN)
+- `WebtoonParser()` - Webtoon source (ID)
+- `MangaPlusParser()` - MangaPlus source (ID)
+- `KomikuParser()` - Komiku source (ID)
+- `IkiruParser()` - Ikiru source (ID)
+
+Removed (source dead): `ComicSansParser`, `BatotoParser`, `KomikluParser`, `KiryuuParser`.
+
+### Image Headers
+
+```dart
+// Some sources (e.g. Komiku) block hotlinked images with 403.
+// Always pass the parser's headers when rendering images:
+Image.network(url, headers: parser.imageHeaders)
+```
 
 ### Models
 

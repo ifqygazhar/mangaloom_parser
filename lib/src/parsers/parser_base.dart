@@ -14,6 +14,16 @@ abstract class ComicParser {
   /// Bahasa yang didukung (ID, EN, dll)
   String get language;
 
+  /// HTTP headers yang diperlukan saat memuat gambar (thumbnail/panel chapter).
+  /// Beberapa source memproteksi gambarnya dengan hotlink protection
+  /// (referer check), sehingga widget gambar perlu mengirim header ini.
+  ///
+  /// Contoh penggunaan:
+  /// ```dart
+  /// Image.network(url, headers: parser.imageHeaders)
+  /// ```
+  Map<String, String> get imageHeaders => {};
+
   /// Fetch popular comics
   Future<List<ComicItem>> fetchPopular();
 

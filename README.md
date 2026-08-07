@@ -25,18 +25,19 @@ A powerful and flexible Flutter package for parsing comic/manga websites. Easily
 
 ## 🚀 Supported Parsers
 
-| Parser              | Source      | Language | Status    |
-| ------------------- | ----------- | -------- | --------- |
-| **ShinigamiParser** | Shinigami   | ID       | ✅ Active |
-| **ComicSansParser** | CosmicScans | ID       | ✅ Active |
-| **MangaparkParser** | Mangapark   | EN       | ✅ Active |
-| **WebtoonParser**   | Webtoon     | ID       | ✅ Active |
-| **BatotoParser**    | Batoto      | EN       | 💀 Died   |
-| **MangaplusParser** | Mangaplus   | ID       | ✅ Active |
-| **KomikluParser**   | Komiklu     | ID       | ✅ Active |
-| **KomikuParser**    | Komiku      | ID       | ✅ Active |
-| **KiryuuParser**    | Kiryuu      | ID       | ✅ Active |
-| **IkiruParser**     | Ikiru       | ID       | ✅ Active |
+| Parser              | Source    | Language | Status    |
+| ------------------- | --------- | -------- | --------- |
+| **ShinigamiParser** | Shinigami | ID       | ✅ Active |
+| **MangaParkParser** | MangaPark | EN       | ✅ Active |
+| **WebtoonParser**   | Webtoon   | ID       | ✅ Active |
+| **MangaPlusParser** | MangaPlus | ID       | ✅ Active |
+| **KomikuParser**    | Komiku    | ID       | ✅ Active |
+| **IkiruParser**     | Ikiru     | ID       | ✅ Active |
+
+> 💀 **Removed parsers** (source shut down / domain dead):
+> `ComicSansParser` (cosmicscans.asia), `BatotoParser` (xto.to),
+> `KomikluParser` (v2.komiklu.com), `KiryuuParser` (kiryuu03.com).
+> See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## 📦 Installation
 
@@ -76,8 +77,8 @@ import 'package:mangaloom_parser/mangaloom_parser.dart';
 // Using Shinigami Parser
 final parser = ShinigamiParser();
 
-// Or using ComicSans Parser
-final parser = ComicSansParser();
+// Or using Komiku Parser
+final parser = KomikuParser();
 ```
 
 ### Fetch popular comics
@@ -283,6 +284,7 @@ All parsers implement these methods:
 - `String sourceName` - Name of the comic source
 - `String baseUrl` - Base URL of the source
 - `String language` - Language code (e.g., "ID")
+- `Map<String, String> imageHeaders` - HTTP headers required when loading images (see below)
 
 #### Methods
 
@@ -325,6 +327,30 @@ Fetch detailed information about a comic.
 ##### `Future<ReadChapter> fetchChapter(String href)`
 
 Fetch chapter images and navigation.
+
+### 🖼️ Image Loading (Hotlink Protection)
+
+Some sources protect their images with **referer checks** (hotlink protection) — loading images without the correct `Referer` header results in `403 Forbidden`. Each parser exposes the required headers via `imageHeaders`:
+
+```dart
+Image.network(
+  comic.thumbnail,
+  headers: parser.imageHeaders,
+)
+
+// Chapter panels
+ListView.builder(
+  itemCount: chapter.panel.length,
+  itemBuilder: (context, index) {
+    return Image.network(
+      chapter.panel[index],
+      headers: parser.imageHeaders,
+    );
+  },
+);
+```
+
+`imageHeaders` returns an empty map for sources without protection, so it is always safe to pass.
 
 ### Models
 

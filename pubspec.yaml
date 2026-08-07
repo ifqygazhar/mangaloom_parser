@@ -14,13 +14,15 @@ dependencies:
     sdk: flutter
   http: ^1.5.0
   html: ^0.15.6
-  crypto: ^3.0.6
-  encrypt: ^5.0.3
   uuid: ^4.5.1
-  flutter_js:
-    git:
-      url: https://github.com/thomers/flutter_js.git
-      ref: master
+  # Tidak terpakai saat ini (sebelumnya dipakai BatotoParser yang sudah dihapus).
+  # Uncomment jika diperlukan lagi di kemudian hari.
+  # crypto: ^3.0.6
+  # encrypt: ^5.0.3
+  # flutter_js:
+  #   git:
+  #     url: https://github.com/thomers/flutter_js.git
+  #     ref: master
 
 dev_dependencies:
   flutter_test:

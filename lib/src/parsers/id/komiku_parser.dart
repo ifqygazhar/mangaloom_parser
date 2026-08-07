@@ -28,6 +28,16 @@ class KomikuParser extends ComicParser {
   @override
   String get language => 'ID';
 
+  /// Komiku memproteksi gambar dengan referer check (403 tanpa Referer).
+  /// Gunakan header ini saat memuat thumbnail/panel di widget gambar.
+  @override
+  Map<String, String> get imageHeaders => const {
+    'Referer': 'https://komiku.org/',
+    'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+  };
+
   Map<String, String> get _headers => {
     'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',

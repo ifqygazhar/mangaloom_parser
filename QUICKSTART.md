@@ -24,8 +24,11 @@ import 'package:mangaloom_parser/mangaloom_parser.dart';
 ```dart
 final parser = ShinigamiParser();
 // or
-final parser = ComicSansParser();
+final parser = KomikuParser();
 ```
+
+Available parsers: `ShinigamiParser`, `MangaParkParser`, `WebtoonParser`,
+`MangaPlusParser`, `KomikuParser`, `IkiruParser`.
 
 ### 3. Fetch Data
 
@@ -63,7 +66,8 @@ ListView.builder(
   itemBuilder: (context, index) {
     final comic = comics[index];
     return ListTile(
-      leading: Image.network(comic.thumbnail),
+      // Pass parser.imageHeaders — some sources block hotlinking (403)
+      leading: Image.network(comic.thumbnail, headers: parser.imageHeaders),
       title: Text(comic.title),
       subtitle: Text(comic.type ?? ''),
       onTap: () {
@@ -95,7 +99,10 @@ final chapter = await parser.fetchChapter(chapterHref);
 ListView.builder(
   itemCount: chapter.panel.length,
   itemBuilder: (context, index) {
-    return Image.network(chapter.panel[index]);
+    return Image.network(
+      chapter.panel[index],
+      headers: parser.imageHeaders, // required for referer-protected sources
+    );
   },
 );
 ```
@@ -129,6 +136,7 @@ parser.fetchChapter('/chapter-href/')
 1. **Always dispose:** Call `parser.dispose()` when done
 2. **Error handling:** Wrap calls in try-catch
 3. **Network:** Add internet permission
+4. **Images:** Pass `parser.imageHeaders` to `Image.network`/`CachedNetworkImage` — otherwise referer-protected sources (e.g. Komiku) will fail with 403
 
 ## 📚 Full Documentation
 
