@@ -21,8 +21,8 @@
 ### Source Code
 
 - [x] Base parser class (`ComicParser`) with `imageHeaders` support
-- [x] 6 active parser implementations: Shinigami, MangaPark, Webtoon, MangaPlus, Komiku, Ikiru
-- [x] Dead parsers removed: ComicSans, Batoto, Komiklu, Kiryuu
+- [x] 6 active parser implementations: Shinigami, Webtoon, MangaPlus, Komiku, Ikiru, Bbato
+- [x] Dead/unscrapable parsers removed: MangaPark, ComicSans, Batoto, Komiklu, Kiryuu
 - [x] Data models (5 models)
 - [x] Helper utilities
 - [x] Proper exports
@@ -143,7 +143,7 @@ Before publishing to pub.dev:
 ## 🎨 Example App Stats
 
 - **Total Screens**: 4 (Home, Detail, Reader, Genres)
-- **Parser Support**: 6 (Shinigami, MangaPark, Webtoon, MangaPlus, Komiku, Ikiru)
+- **Parser Support**: 6 (Shinigami, Webtoon, MangaPlus, Komiku, Ikiru, Bbato)
 - **Test Functions**: 8
 - **UI Components**: 10+
 - **Lines of Code**: ~900+

@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- 🎨 **BbatoParser** - New English (EN) parser for [bbato.com](https://bbato.com), ported from the `bbato/Bbato.kt` Tachiyomi extension.
+  - `fetchPopular()` - Home page most-viewed tabs merged & deduped
+  - `fetchRecommended()` - alias of popular (home section doesn't paginate)
+  - `fetchNewest({page})` / `fetchAll({page})` - `/updated` with pagination
+  - `search(query)` & `fetchFiltered()` - `/filter` endpoint with type/genre/status/sort params
+  - `fetchGenres()` - curated genre list from the extension
+  - `fetchDetail(href)` - parses `h1[itemprop=name]`, `.meta` (author/genres), `.description`, `.poster img`, status; chapters via JSON API `get-chapter-list?slug=`
+  - `fetchChapter(href)` - chapter pages from `.pages .page img` with `data-src` fallback `src`
+  - `imageHeaders` with `Referer: https://bbato.com/` - required for the CDN (cdn2.merrypsycho.xyz) hotlink protection
+- 🛠️ **Resilient HTTP**: Bbato parser uses a fresh client per request + retries transient "Connection closed" errors (bbato.com drops keep-alive/pooled connections periodically).
+
+### Tests
+
+- 🧪 **`test/bbato_parser_test.dart`** - Full scraping health-check for Bbato: popular, recommended, newest, search, genres, byGenre, filtered, detail, chapter (with image URL printing).
+
+### Changed
+
+- ✨ **Example app** - Added `BbatoParser` to the parser switcher.
+- 🧪 **`test/parser_health_test.dart`** - Now includes Bbato.
+- 📄 **Docs** - README/QUICKSTART/DOCUMENTATION/PACKAGE_CHECKLIST updated to list Bbato as an active EN parser.
+
+### Notes
+
+- ✅ **Bbato health-check 9/9 endpoints succeeded** (server intermittently drops connections; retry logic handles it).
+- `MangaPlusParser` remains active but renders 403 under anti-bot protection in automated tests.
+
 ## [0.1.11]
 
 ### Added
@@ -16,21 +46,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- 💀 **MangaParkParser** - Source no longer scrapable: `mangapark.page` / `comicpark.to` / `readpark.org` all serve a JS anti-bot challenge (parklogic) that can't be bypassed with a plain HTTP parser
 - 💀 **ComicSansParser** - Source dead (lc4.cosmicscans.asia domain no longer resolves)
 - 💀 **BatotoParser** - Source dead (xto.to returns 404)
 - 💀 **KomikluParser** - Source dead (v2.komiklu.com domain no longer resolves)
 - 💀 **KiryuuParser** - Source dead (kiryuu03.com SSL hostname mismatch, domain sold/parked)
 
-### Changed
+### Tests
 
-- 📦 **Dependencies** - `crypto`, `encrypt`, and `flutter_js` are now commented out in `pubspec.yaml` (previously only used by the removed `BatotoParser`). Uncomment if needed again in the future.
-- 🧹 **Example app** - Removed dead parsers from the parser switcher; all `Image.network` calls now use `parser.imageHeaders` instead of hardcoded headers.
-- ✅ **Tests** - Added `test/komiku_parser_test.dart` (imageHeaders contract + real chapter HTML parsing) and `test/parser_health_test.dart` (live health check for all active parsers). Removed obsolete template test.
+- 🧪 **`test/ikiru_parser_test.dart`** - Full scraping health-check for Ikiru: runs every endpoint (popular, recommended, newest, all, search, genres, byGenre, filtered, detail, chapter) against the live source and prints a pass/fail summary.
+- 🧪 **`test/komiku_parser_test.dart`** - imageHeaders contract + real chapter HTML parsing.
+- 🧪 **`test/parser_health_test.dart`** - Live health check for all active parsers.
+- Removed obsolete template test.
 
 ### Notes
 
+- ✅ **Ikiru full health-check: 10/10 endpoints succeeded.**
 - `NatsuParser` base class is **retained** — it is still the base class of `IkiruParser`.
-- `MangaPlusParser` and `MangaParkParser` remain active: their sources are online; test failures in sandboxed environments are caused by SSL inspection / anti-bot protection, not dead sources.
+- `MangaPlusParser` remains active: its source is online; test failures in sandboxed environments are caused by anti-bot protection, not a dead source.
 
 ## [0.1.10] - 2026-02-25
 

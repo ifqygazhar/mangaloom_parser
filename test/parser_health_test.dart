@@ -4,11 +4,11 @@ import 'package:mangaloom_parser/mangaloom_parser.dart';
 void main() {
   final parsers = <String, ComicParser Function()>{
     'Shinigami': () => ShinigamiParser(),
-    'MangaPark': () => MangaParkParser(),
     'Webtoon': () => WebtoonParser(),
     'MangaPlus': () => MangaPlusParser(),
     'Komiku': () => KomikuParser(),
     'Ikiru': () => IkiruParser(),
+    'Bbato': () => BbatoParser(),
   };
 
   for (final entry in parsers.entries) {

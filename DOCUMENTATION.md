@@ -12,7 +12,7 @@
 
 ## 🎯 Key Features
 
-✅ Multiple parser support (Shinigami, MangaPark, Webtoon, MangaPlus, Komiku, Ikiru)
+✅ Multiple parser support (Shinigami, Webtoon, MangaPlus, Komiku, Ikiru, Bbato)
 ✅ Fetch popular, recommended, newest comics
 ✅ Search functionality
 ✅ Genre browsing and filtering
@@ -87,10 +87,9 @@ mangaloom_parser/
 │       │   │   ├── mangaplus_parser.dart
 │       │   │   ├── webtoon_parser.dart
 │       │   │   ├── komiku_parser.dart
-│       │   │   ├── ikiru_parser.dart
-│       │   │   └── kiryuu_parser.dart  (removed - source dead)
+│       │   │   └── ikiru_parser.dart
 │       │   ├── en/                     # English parsers
-│       │   │   └── mangapark_parser.dart
+│       │   │   └── bbato_parser.dart
 │       │   └── lib/                    # Shared base parsers
 │       │       └── natsu_parser.dart   # Base for NatsuId theme sites
 │       └── utils/                      # Utilities
@@ -110,13 +109,13 @@ mangaloom_parser/
 ### Parsers
 
 - `ShinigamiParser()` - Shinigami source (ID)
-- `MangaParkParser()` - MangaPark source (EN)
 - `WebtoonParser()` - Webtoon source (ID)
 - `MangaPlusParser()` - MangaPlus source (ID)
 - `KomikuParser()` - Komiku source (ID)
 - `IkiruParser()` - Ikiru source (ID)
+- `BbatoParser()` - Bbato source (EN)
 
-Removed (source dead): `ComicSansParser`, `BatotoParser`, `KomikluParser`, `KiryuuParser`.
+Removed (source dead / not scrapable): `MangaParkParser`, `ComicSansParser`, `BatotoParser`, `KomikluParser`, `KiryuuParser`.
 
 ### Image Headers
 

@@ -32,11 +32,11 @@ class HomePage extends StatefulWidget {
 
 enum ParserType {
   shinigami,
-  mangapark,
   webtoon,
   mangaplus,
   komiku,
   ikiru,
+  bbato,
 }
 
 enum TestFunction {
@@ -70,11 +70,11 @@ class _HomePageState extends State<HomePage> {
 
   final subtitleParserSelection = {
     ParserType.shinigami: 'Shinigami - ID',
-    ParserType.mangapark: 'MangaPark - EN',
     ParserType.webtoon: 'Webtoon - ID',
     ParserType.mangaplus: 'MangaPlus - ID',
     ParserType.komiku: 'Komiku - ID',
     ParserType.ikiru: 'Ikiru - ID',
+    ParserType.bbato: 'Bbato - EN',
   };
 
   @override
@@ -87,14 +87,14 @@ class _HomePageState extends State<HomePage> {
   void _initializeParser() {
     if (selectedParser == ParserType.shinigami) {
       parser = ShinigamiParser();
-    } else if (selectedParser == ParserType.mangapark) {
-      parser = MangaParkParser();
     } else if (selectedParser == ParserType.mangaplus) {
       parser = MangaPlusParser();
     } else if (selectedParser == ParserType.komiku) {
       parser = KomikuParser();
     } else if (selectedParser == ParserType.ikiru) {
       parser = IkiruParser();
+    } else if (selectedParser == ParserType.bbato) {
+      parser = BbatoParser();
     } else {
       parser = WebtoonParser();
     }
@@ -104,8 +104,6 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     if (parser is ShinigamiParser) {
       (parser as ShinigamiParser).dispose();
-    } else if (parser is MangaParkParser) {
-      (parser as MangaParkParser).dispose();
     } else if (parser is WebtoonParser) {
       (parser as WebtoonParser).dispose();
     } else if (parser is MangaPlusParser) {
@@ -114,6 +112,8 @@ class _HomePageState extends State<HomePage> {
       (parser as KomikuParser).dispose();
     } else if (parser is IkiruParser) {
       (parser as IkiruParser).dispose();
+    } else if (parser is BbatoParser) {
+      (parser as BbatoParser).dispose();
     }
     super.dispose();
   }
@@ -205,14 +205,14 @@ class _HomePageState extends State<HomePage> {
     // Dispose old parser
     if (parser is ShinigamiParser) {
       (parser as ShinigamiParser).dispose();
-    } else if (parser is MangaParkParser) {
-      (parser as MangaParkParser).dispose();
     } else if (parser is WebtoonParser) {
       (parser as WebtoonParser).dispose();
     } else if (parser is MangaPlusParser) {
       (parser as MangaPlusParser).dispose();
     } else if (parser is IkiruParser) {
       (parser as IkiruParser).dispose();
+    } else if (parser is BbatoParser) {
+      (parser as BbatoParser).dispose();
     }
 
     setState(() {

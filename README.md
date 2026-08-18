@@ -28,13 +28,14 @@ A powerful and flexible Flutter package for parsing comic/manga websites. Easily
 | Parser              | Source    | Language | Status    |
 | ------------------- | --------- | -------- | --------- |
 | **ShinigamiParser** | Shinigami | ID       | ✅ Active |
-| **MangaParkParser** | MangaPark | EN       | ✅ Active |
 | **WebtoonParser**   | Webtoon   | ID       | ✅ Active |
 | **MangaPlusParser** | MangaPlus | ID       | ✅ Active |
 | **KomikuParser**    | Komiku    | ID       | ✅ Active |
 | **IkiruParser**     | Ikiru     | ID       | ✅ Active |
+| **BbatoParser**     | Bbato     | EN       | ✅ Active |
 
-> 💀 **Removed parsers** (source shut down / domain dead):
+> 💀 **Removed parsers** (source shut down / no longer scrapable):
+> `MangaParkParser` (mangapark/readpark now behind a JS anti-bot challenge),
 > `ComicSansParser` (cosmicscans.asia), `BatotoParser` (xto.to),
 > `KomikluParser` (v2.komiklu.com), `KiryuuParser` (kiryuu03.com).
 > See [CHANGELOG.md](CHANGELOG.md) for details.
