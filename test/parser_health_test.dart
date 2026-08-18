@@ -8,7 +8,12 @@ void main() {
     'MangaPlus': () => MangaPlusParser(),
     'Komiku': () => KomikuParser(),
     'Ikiru': () => IkiruParser(),
+    'Kiryuu': () => KiryuuParser(),
+    'BacaKomik': () => BacaKomikParser(),
+    'Komikindo': () => KomikindoParser(),
     'Bbato': () => BbatoParser(),
+    'AsuraScans': () => AsuraScansParser(),
+    'FlameComics': () => FlameComicsParser(),
   };
 
   for (final entry in parsers.entries) {

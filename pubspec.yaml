@@ -15,6 +15,7 @@ dependencies:
   http: ^1.5.0
   html: ^0.15.6
   uuid: ^4.5.1
+  image: ^4.9.1
   # Tidak terpakai saat ini (sebelumnya dipakai BatotoParser yang sudah dihapus).
   # Uncomment jika diperlukan lagi di kemudian hari.
   # crypto: ^3.0.6

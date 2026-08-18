@@ -36,6 +36,9 @@ enum ParserType {
   mangaplus,
   komiku,
   ikiru,
+  kiryuu,
+  bacakomik,
+  komikindo,
   bbato,
 }
 
@@ -74,6 +77,9 @@ class _HomePageState extends State<HomePage> {
     ParserType.mangaplus: 'MangaPlus - ID',
     ParserType.komiku: 'Komiku - ID',
     ParserType.ikiru: 'Ikiru - ID',
+    ParserType.kiryuu: 'Kiryuu - ID',
+    ParserType.bacakomik: 'BacaKomik - ID',
+    ParserType.komikindo: 'Komikindo - ID',
     ParserType.bbato: 'Bbato - EN',
   };
 
@@ -93,6 +99,12 @@ class _HomePageState extends State<HomePage> {
       parser = KomikuParser();
     } else if (selectedParser == ParserType.ikiru) {
       parser = IkiruParser();
+    } else if (selectedParser == ParserType.kiryuu) {
+      parser = KiryuuParser();
+    } else if (selectedParser == ParserType.bacakomik) {
+      parser = BacaKomikParser();
+    } else if (selectedParser == ParserType.komikindo) {
+      parser = KomikindoParser();
     } else if (selectedParser == ParserType.bbato) {
       parser = BbatoParser();
     } else {
@@ -112,8 +124,18 @@ class _HomePageState extends State<HomePage> {
       (parser as KomikuParser).dispose();
     } else if (parser is IkiruParser) {
       (parser as IkiruParser).dispose();
+    } else if (parser is KiryuuParser) {
+      (parser as KiryuuParser).dispose();
+    } else if (parser is BacaKomikParser) {
+      (parser as BacaKomikParser).dispose();
+    } else if (parser is KomikindoParser) {
+      (parser as KomikindoParser).dispose();
     } else if (parser is BbatoParser) {
       (parser as BbatoParser).dispose();
+    } else if (parser is AsuraScansParser) {
+      (parser as AsuraScansParser).dispose();
+    } else if (parser is FlameComicsParser) {
+      (parser as FlameComicsParser).dispose();
     }
     super.dispose();
   }
@@ -211,8 +233,18 @@ class _HomePageState extends State<HomePage> {
       (parser as MangaPlusParser).dispose();
     } else if (parser is IkiruParser) {
       (parser as IkiruParser).dispose();
+    } else if (parser is KiryuuParser) {
+      (parser as KiryuuParser).dispose();
+    } else if (parser is BacaKomikParser) {
+      (parser as BacaKomikParser).dispose();
+    } else if (parser is KomikindoParser) {
+      (parser as KomikindoParser).dispose();
     } else if (parser is BbatoParser) {
       (parser as BbatoParser).dispose();
+    } else if (parser is AsuraScansParser) {
+      (parser as AsuraScansParser).dispose();
+    } else if (parser is FlameComicsParser) {
+      (parser as FlameComicsParser).dispose();
     }
 
     setState(() {

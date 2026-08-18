@@ -28,7 +28,9 @@ final parser = KomikuParser();
 ```
 
 Available parsers: `ShinigamiParser`, `WebtoonParser`,
-`MangaPlusParser`, `KomikuParser`, `IkiruParser`, `BbatoParser`.
+`MangaPlusParser`, `KomikuParser`, `IkiruParser`, `KiryuuParser`,
+`BacaKomikParser`, `KomikindoParser`, `BbatoParser`, `AsuraScansParser`,
+`FlameComicsParser`.
 
 ### 3. Fetch Data
 

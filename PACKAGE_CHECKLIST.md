@@ -21,8 +21,8 @@
 ### Source Code
 
 - [x] Base parser class (`ComicParser`) with `imageHeaders` support
-- [x] 6 active parser implementations: Shinigami, Webtoon, MangaPlus, Komiku, Ikiru, Bbato
-- [x] Dead/unscrapable parsers removed: MangaPark, ComicSans, Batoto, Komiklu, Kiryuu
+- [x] 11 active parser implementations: Shinigami, Webtoon, MangaPlus, Komiku, Ikiru, Kiryuu, BacaKomik, Komikindo, Bbato, AsuraScans, FlameComics
+- [x] Dead/unscrapable parsers removed: MangaPark, ComicSans, Batoto, Komiklu, Kiryuu(gede domain)
 - [x] Data models (5 models)
 - [x] Helper utilities
 - [x] Proper exports
@@ -143,7 +143,7 @@ Before publishing to pub.dev:
 ## 🎨 Example App Stats
 
 - **Total Screens**: 4 (Home, Detail, Reader, Genres)
-- **Parser Support**: 6 (Shinigami, Webtoon, MangaPlus, Komiku, Ikiru, Bbato)
+- **Parser Support**: 11 (Shinigami, Webtoon, MangaPlus, Komiku, Ikiru, Kiryuu, BacaKomik, Komikindo, Bbato, AsuraScans, FlameComics)
 - **Test Functions**: 8
 - **UI Components**: 10+
 - **Lines of Code**: ~900+
@@ -177,7 +177,7 @@ Before publishing to pub.dev:
 ### What's Ready
 
 ✅ **Complete documentation** - README, QUICKSTART, CHANGELOG, CONTRIBUTING
-✅ **Working code** - 6 parsers, 5 models, all functions implemented
+✅ **Working code** - 11 parsers, 5 models, all functions implemented
 ✅ **Example app** - Full-featured Flutter app with modern UI, uses `parser.imageHeaders` for image loading
 ✅ **Bug fixes** - Solved image 403 errors on referer-protected sources via `imageHeaders`
 ✅ **Package configuration** - pubspec.yaml, .pubignore, LICENSE

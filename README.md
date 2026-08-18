@@ -32,7 +32,12 @@ A powerful and flexible Flutter package for parsing comic/manga websites. Easily
 | **MangaPlusParser** | MangaPlus | ID       | ✅ Active |
 | **KomikuParser**    | Komiku    | ID       | ✅ Active |
 | **IkiruParser**     | Ikiru     | ID       | ✅ Active |
+| **KiryuuParser**    | Kiryuu    | ID       | ✅ Active |
+| **BacaKomikParser** | BacaKomik | ID       | ✅ Active |
+| **KomikindoParser** | Komikindo | ID       | ✅ Active |
 | **BbatoParser**     | Bbato     | EN       | ✅ Active |
+| **AsuraScansParser**| AsuraScans| EN       | ✅ Active |
+| **FlameComicsParser**| FlameComics|EN       | ✅ Active |
 
 > 💀 **Removed parsers** (source shut down / no longer scrapable):
 > `MangaParkParser` (mangapark/readpark now behind a JS anti-bot challenge),

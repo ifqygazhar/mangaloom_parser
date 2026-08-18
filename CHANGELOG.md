@@ -20,15 +20,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `imageHeaders` with `Referer: https://bbato.com/` - required for the CDN (cdn2.merrypsycho.xyz) hotlink protection
 - 🛠️ **Resilient HTTP**: Bbato parser uses a fresh client per request + retries transient "Connection closed" errors (bbato.com drops keep-alive/pooled connections periodically).
 
+- 🎨 **KiryuuParser** (re-added) - Indonesian parser based on the shared `NatsuParser`. The old domain (kiryuu03.com) died; restored using the current domain `v7.kiryuu.to`.
+- 🎨 **BacaKomikParser** - New Indonesian parser for [bacakomik.my](https://bacakomik.my), ported from `bacakomik/BacaKomik.kt`.
+  - `fetchPopular`/`fetchNewest` via `/daftar-komik/?order=...`
+  - Title extracted from JSON-LD breadcrumb; genre via `/genres/{slug}/`
+  - Chapters from `#chapter_list`; reader images from `onError`/`data-lazy-src` (CDN `imageainewgeneration.lol`)
+- 🎨 **KomikindoParser** - New Indonesian parser for [komikindo.fit](https://komikindo.fit), ported from the **MangaThemesia**-based `komikindo/Komikindo.kt`.
+  - Lists via `.listupd .bs .bsx`; details via `.infotable` + `.seriestugenre`
+  - Chapters from `#chapterlist .clstyle li`; reader images via `#readerarea` (including `<noscript>` fallback)
+  - `imageHeaders` with `Referer: https://komikindo.fit/`
+- 🎨 **AsuraScansParser** - New English parser for [asurascans.com](https://asurascans.com), ported from `asurascans/AsuraScans.kt`.
+  - Uses the JSON API (`api.asurascans.com/api/series`) for lists + Astro-serialized props in page HTML for detail/chapters.
+  - **Scrambled image support**: chapters with tile-arranged images are un-scrambled via `package:image` (decode → copyCrop → compositeImage → PNG data URI).
+- 🎨 **FlameComicsParser** - New English parser for [flamecomics.xyz](https://flamecomics.xyz), ported from `flamecomics/FlameComics.kt`.
+  - Uses the Next.js `/_next/data/{buildId}/` JSON API for browse/index/series/chapter data.
+  - **Composed strip stitching**: helpers built on `package:image` to combine horizontal image strips into a single image.
+
+### Dependencies
+
+- 📦 **`image`** added to `pubspec.yaml` (required for scrambled-tile un-scrambling & image stitching on AsuraScans/FlameComics).
+
 ### Tests
 
 - 🧪 **`test/bbato_parser_test.dart`** - Full scraping health-check for Bbato: popular, recommended, newest, search, genres, byGenre, filtered, detail, chapter (with image URL printing).
+- 🧪 **`test/kiryuu_parser_test.dart`** - Full scraping health-check for Kiryuu (5 endpoints).
+- 🧪 **`test/bacakomik_parser_test.dart`** - Full scraping health-check for BacaKomik (6 endpoints).
+- 🧪 **`test/komikindo_parser_test.dart`** - Full scraping health-check for Komikindo (5 endpoints).
+- 🧪 **`test/asurascans_parser_test.dart`** - Full scraping health-check for AsuraScans (popular, newest, search, detail+chapter).
+- 🧪 **`test/flamecomics_parser_test.dart`** - Full scraping health-check for FlameComics (popular, newest, search, detail+chapter).
 
 ### Changed
 
-- ✨ **Example app** - Added `BbatoParser` to the parser switcher.
-- 🧪 **`test/parser_health_test.dart`** - Now includes Bbato.
-- 📄 **Docs** - README/QUICKSTART/DOCUMENTATION/PACKAGE_CHECKLIST updated to list Bbato as an active EN parser.
+- ✨ **Example app** - Added `BbatoParser`, `KiryuuParser`, `BacaKomikParser`, `KomikindoParser`, `AsuraScansParser`, and `FlameComicsParser` to the parser switcher.
+- 🧪 **`test/parser_health_test.dart`** - Now includes all live parsers incl. AsuraScans & FlameComics.
+- 📄 **Docs** - README/QUICKSTART/DOCUMENTATION/PACKAGE_CHECKLIST updated to list the new active parsers.
 
 ### Notes
 

@@ -12,7 +12,7 @@
 
 ## 🎯 Key Features
 
-✅ Multiple parser support (Shinigami, Webtoon, MangaPlus, Komiku, Ikiru, Bbato)
+✅ Multiple parser support (Shinigami, Webtoon, MangaPlus, Komiku, Ikiru, Kiryuu, BacaKomik, Komikindo, Bbato, AsuraScans, FlameComics)
 ✅ Fetch popular, recommended, newest comics
 ✅ Search functionality
 ✅ Genre browsing and filtering
@@ -113,7 +113,12 @@ mangaloom_parser/
 - `MangaPlusParser()` - MangaPlus source (ID)
 - `KomikuParser()` - Komiku source (ID)
 - `IkiruParser()` - Ikiru source (ID)
+- `KiryuuParser()` - Kiryuu source (ID)
+- `BacaKomikParser()` - BacaKomik source (ID)
+- `KomikindoParser()` - Komikindo source (ID)
 - `BbatoParser()` - Bbato source (EN)
+- `AsuraScansParser()` - AsuraScans source (EN)
+- `FlameComicsParser()` - FlameComics source (EN)
 
 Removed (source dead / not scrapable): `MangaParkParser`, `ComicSansParser`, `BatotoParser`, `KomikluParser`, `KiryuuParser`.
 
