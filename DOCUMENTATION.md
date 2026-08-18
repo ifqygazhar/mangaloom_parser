@@ -19,7 +19,7 @@
 ✅ Advanced filtering (status, type, order)
 ✅ Comic details with chapters
 ✅ Chapter reading with image URLs
-✅ `imageHeaders` for referer-protected image loading (hotlink protection)
+✅ `imageHeaders` / `chapterImageHeaders` for referer-protected image loading (hotlink protection)
 ✅ Pagination support
 ✅ Indonesian language support
 
@@ -128,6 +128,9 @@ Removed (source dead / not scrapable): `MangaParkParser`, `ComicSansParser`, `Ba
 // Some sources (e.g. Komiku) block hotlinked images with 403.
 // Always pass the parser's headers when rendering images:
 Image.network(url, headers: parser.imageHeaders)
+// For chapter panels, use chapterImageHeaders (may differ per source,
+// e.g. Ikiru needs Referer: ikiru.id only for chapter images):
+Image.network(chapterUrl, headers: parser.chapterImageHeaders)
 ```
 
 ### Models

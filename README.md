@@ -290,7 +290,8 @@ All parsers implement these methods:
 - `String sourceName` - Name of the comic source
 - `String baseUrl` - Base URL of the source
 - `String language` - Language code (e.g., "ID")
-- `Map<String, String> imageHeaders` - HTTP headers required when loading images (see below)
+- `Map<String, String> imageHeaders` - HTTP headers required when loading **thumbnails / list** images (see below)
+- `Map<String, String> chapterImageHeaders` - HTTP headers for **chapter panels**; defaults to `imageHeaders`, but a parser may override it when chapter and thumbnail images need different referers (e.g. Ikiru)
 
 #### Methods
 
@@ -357,6 +358,21 @@ ListView.builder(
 ```
 
 `imageHeaders` returns an empty map for sources without protection, so it is always safe to pass.
+
+For **chapter panel images**, use `chapterImageHeaders`. It defaults to `imageHeaders` for most sources, but a parser like **Ikiru** overrides it because its chapter CDN requires `Referer: https://ikiru.id/` while thumbnails must *not* send that referer:
+
+```dart
+// Chapter reader
+ListView.builder(
+  itemCount: chapter.panel.length,
+  itemBuilder: (context, index) {
+    return Image.network(
+      chapter.panel[index],
+      headers: parser.chapterImageHeaders,
+    );
+  },
+);
+```
 
 ### Models
 

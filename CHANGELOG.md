@@ -40,6 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 📦 **`image`** added to `pubspec.yaml` (required for scrambled-tile un-scrambling & image stitching on AsuraScans/FlameComics).
 
+### Changed
+
+- 🖼️ **`ComicParser.chapterImageHeaders`** - New property scoped to **chapter panel** images. Defaults to `imageHeaders`, but a parser can override it when chapter and thumbnail images need different `Referer` headers.
+  - **IkiruParser**: `imageHeaders` now returns empty (so thumbnails/list load normally); the `Referer: https://ikiru.id/` is moved to `chapterImageHeaders` only, fixing thumbnails that were previously blocked by the chapter referer.
+
 ### Tests
 
 - 🧪 **`test/bbato_parser_test.dart`** - Full scraping health-check for Bbato: popular, recommended, newest, search, genres, byGenre, filtered, detail, chapter (with image URL printing).

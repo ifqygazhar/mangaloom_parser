@@ -24,6 +24,20 @@ abstract class ComicParser {
   /// ```
   Map<String, String> get imageHeaders => {};
 
+  /// HTTP headers yang **hanya** dipakai untuk panel gambar chapter
+  /// (bukan thumbnail/list). Beberapa source mewajibkan `Referer` berbeda
+  /// untuk gambar chapter vs daftar — mengirim referer chapter ke thumbnail
+  /// justru bisa memblokirnya (contoh: Ikiru).
+  ///
+  /// Default mengembalikan [imageHeaders] agar perilaku lama tetap berfungsi
+  /// untuk parser yang tidak membedakan keduanya.
+  ///
+  /// Gunakan di widget reader:
+  /// ```dart
+  /// Image.network(chapter.panel[i], headers: parser.chapterImageHeaders)
+  /// ```
+  Map<String, String> get chapterImageHeaders => imageHeaders;
+
   /// Fetch popular comics
   Future<List<ComicItem>> fetchPopular();
 

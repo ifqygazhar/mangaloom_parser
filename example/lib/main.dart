@@ -40,6 +40,8 @@ enum ParserType {
   bacakomik,
   komikindo,
   bbato,
+  asurascans,
+  flamecomics,
 }
 
 enum TestFunction {
@@ -81,6 +83,8 @@ class _HomePageState extends State<HomePage> {
     ParserType.bacakomik: 'BacaKomik - ID',
     ParserType.komikindo: 'Komikindo - ID',
     ParserType.bbato: 'Bbato - EN',
+    ParserType.asurascans: 'AsuraScans - EN',
+    ParserType.flamecomics: 'FlameComics - EN',
   };
 
   @override
@@ -107,6 +111,10 @@ class _HomePageState extends State<HomePage> {
       parser = KomikindoParser();
     } else if (selectedParser == ParserType.bbato) {
       parser = BbatoParser();
+    } else if (selectedParser == ParserType.asurascans) {
+      parser = AsuraScansParser();
+    } else if (selectedParser == ParserType.flamecomics) {
+      parser = FlameComicsParser();
     } else {
       parser = WebtoonParser();
     }
@@ -1421,12 +1429,12 @@ class _ChapterReaderPageState extends State<ChapterReaderPage> {
                     }
 
                     // Regular image loading for other parsers
-                    // Gunakan imageHeaders dari parser agar hotlink
-                    // protection (mis. Komiku 403 tanpa Referer) teratasi.
+                    // Panel chapter pakai chapterImageHeaders — parser seperti
+                    // Ikiru membedakan referer chapter vs thumbnail.
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Image.network(
-                        headers: widget.parser.imageHeaders,
+                        headers: widget.parser.chapterImageHeaders,
                         imageUrl,
                         fit: BoxFit.contain,
                         loadingBuilder: (context, child, loadingProgress) {

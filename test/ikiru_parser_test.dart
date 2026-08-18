@@ -30,11 +30,13 @@ void main() {
       parser = IkiruParser();
     });
 
-    test('imageHeaders contains ikiru.id Referer', () {
-      // Hotlink protection: CDN redirects image requests without the
-      // correct Referer, so it must be present for chapter images to load.
-      expect(parser.imageHeaders['Referer'], 'https://ikiru.id/');
-      expect(parser.imageHeaders['User-Agent'], isNotEmpty);
+    test('chapterImageHeaders contains ikiru.id Referer (chapter only)', () {
+      // Chapter images need Referer: ikiru.id, but thumbnails/list do NOT —
+      // the Referer is intentionally scoped to chapterImageHeaders only.
+      expect(parser.chapterImageHeaders['Referer'], 'https://ikiru.id/');
+      expect(parser.chapterImageHeaders['User-Agent'], isNotEmpty);
+      // imageHeaders (thumbnails/list) should be empty to avoid blocking them.
+      expect(parser.imageHeaders['Referer'], isNull);
     });
 
     tearDown(() {

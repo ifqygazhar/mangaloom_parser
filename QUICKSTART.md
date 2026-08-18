@@ -68,7 +68,7 @@ ListView.builder(
   itemBuilder: (context, index) {
     final comic = comics[index];
     return ListTile(
-      // Pass parser.imageHeaders — some sources block hotlinking (403)
+    // Pass parser.imageHeaders — some sources block hotlinking (403)
       leading: Image.network(comic.thumbnail, headers: parser.imageHeaders),
       title: Text(comic.title),
       subtitle: Text(comic.type ?? ''),
@@ -103,7 +103,7 @@ ListView.builder(
   itemBuilder: (context, index) {
     return Image.network(
       chapter.panel[index],
-      headers: parser.imageHeaders, // required for referer-protected sources
+      headers: parser.chapterImageHeaders, // required for referer-protected sources
     );
   },
 );
